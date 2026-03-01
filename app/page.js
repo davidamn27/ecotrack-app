@@ -1,0 +1,2502 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+const STORAGE_KEY = "ecoboard-data-v4";
+const LANGUAGE_KEY = "ecoboard-language-v1";
+const DEVELOPER_EMAIL = "davidammann@web.de";
+const LEGACY_STORAGE_KEYS = ["ecoboard-data-v3", "ecoboard-data-v2", "earthmeter-data-v1"];
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+const LEVEL_NAMES = ["Starter", "Scout", "Mover", "Impact", "Leader", "Visionary"];
+
+function withBasePath(path) {
+  return `${BASE_PATH}${path}`;
+}
+
+const CATEGORY_LABELS = {
+  mobility: { de: "Mobilität", en: "Mobility" },
+  nutrition: { de: "Ernährung", en: "Nutrition" },
+  household: { de: "Haushalt", en: "Household" },
+  custom: { de: "Individuell", en: "Custom" },
+};
+
+const COPY = {
+  de: {
+    primaryViewLabels: {
+      sustainability: "Nachhaltigkeit",
+      activity: "Nachhaltige Aktivität",
+      chat: "Chat",
+    },
+    utilityNav: {
+      activity: "Aktivität hinzufügen",
+      leaderboard: "Leaderboard",
+      dashboard: "Dashboard",
+    },
+    auth: {
+      title: "Starte mit deiner Anmeldung.",
+      text:
+        "Beim ersten Aufruf siehst du nur die Anmeldung. Nach deinen persönlichen Daten kommst du direkt in den geschützten Bereich der App.",
+      language: "Sprache auswählen",
+      register: "Registrierung",
+      login: "Login",
+      fullName: "Voller Name",
+      email: "E-Mail",
+      city: "Stadt",
+      age: "Alter",
+      password: "Passwort",
+      showPassword: "Passwort anzeigen",
+      continue: "Weiter zur App",
+      signIn: "Einloggen",
+    },
+    headerTitle: "Dein nachhaltiges Verhalten im Blick",
+    loggedInAs: "Eingeloggt als",
+    logout: "LogOut",
+    sustainability: {
+      eyebrow: "Nachhaltigkeit",
+      title: "Informationen zur App",
+      goalTitle: "Ziel der App",
+      goalBody:
+        "EcoTrack macht nachhaltiges Verhalten sichtbar. Nutzer können ihre Aktivitäten erfassen, Fortschritte vergleichen und ihre Entwicklung im Alltag anhand von Kennzahlen verfolgen.",
+      backgroundTitle: "Hintergrund der App",
+      backgroundBody:
+        "Die Anwendung verbindet Motivation, Selbsteinschätzung und Community-Vergleich. Dadurch wird Nachhaltigkeit nicht abstrakt, sondern als konkrete tägliche Handlung erlebbar.",
+      projectTitle: "Projektkontext",
+      projectBody:
+        "Diese App ist eine studentische Arbeit von Jens und David Ammann. Sie dient dazu, nachhaltige Aktivitäten einfach zu dokumentieren und auf moderne, visuelle Weise auszuwerten.",
+      photoMissingTitle: "Bilddatei fehlt noch im Projekt",
+      photoMissingBody:
+        "Lege euer Foto als public/student-team.jpg, public/student-team.jpeg oder public/student-team.png ab, dann wird es hier automatisch angezeigt.",
+    },
+    activity: {
+      eyebrow: "Nachhaltige Aktivität",
+      title: "Aktivität hinzufügen",
+      level: "Level",
+      treeTitle: "EcoTree",
+      treeStageRoots: (progress) => `Wurzeln wachsen: ${progress}%`,
+      treeStageTrunk: (progress) => `Der Stamm bildet sich: ${progress}%`,
+      treeStageCrown: (level) => `Der Baum wächst weiter auf Level ${level}`,
+      levelProgress: (pointsToNext, nextLabel, nextThreshold) =>
+        `Noch ${pointsToNext} Punkte bis ${nextLabel} bei ${nextThreshold} Punkten.`,
+      progress: "Fortschritt",
+      today: "Heute",
+      week: "Diese Woche",
+      saveActivity: "Aktivität speichern",
+      addToList: "Zur Liste hinzufügen",
+      addAgain: "Erneut hinzufügen",
+      removeFromList: "Entfernen",
+      batchTitle: "Sammelliste",
+      batchEmpty: "Noch keine Aktivitäten ausgewählt.",
+      batchSelected: (count, points) => `${count} Aktivitäten ausgewählt • ${points} Punkte`,
+      batchSave: "Alle ausgewählten speichern",
+      batchClear: "Liste leeren",
+      requestTitle: "Neue Aktivität zur Freigabe einreichen",
+      requestPlaceholder: "Zum Beispiel Lastenrad für Wocheneinkauf",
+      requestPointsPlaceholder: "Zum Beispiel 5",
+      requestSubmit: "Zur Entwickler-Freigabe senden",
+      customTitle: "Individuelle Aktivität erfassen",
+      developerSend: "Zum Entwickler senden",
+      customLabel: "Aktivität",
+      customPlaceholder: "Zum Beispiel Kleidungsstücke repariert",
+      customPoints: "Punkte",
+      customSave: "Custom-Aktivität speichern",
+      recentlyActive: "Zuletzt aktiv",
+      tableDate: "Datum",
+      tableCategory: "Kategorie",
+      tableActivity: "Aktivität",
+      tablePoints: "Punkte",
+      noActivities: "Noch keine Aktivitäten gespeichert.",
+    },
+    dashboard: {
+      eyebrow: "Dashboard",
+      title: (name) => `Statistik für ${name}`,
+      rank: (rank, count) => `Rang ${rank} von ${count}`,
+      today: "Heute",
+      week: "Woche",
+      month: "Monat",
+      activities: "Aktivitäten",
+      dailyChart: "Tagesdiagramm",
+      dailyRange: "Letzte 7 Tage",
+      weeklyChart: "Wochen-Diagramm",
+      weeklyRange: "Letzte 4 Wochen",
+      monthlyChart: "Monats-Diagramm",
+      monthlyRange: "Letzte 6 Monate",
+      statsTable: "Statistik-Tabelle",
+      period: "Zeitraum",
+      points: "Punkte",
+      details: "Details",
+      categories: "Kategorien",
+      developerReview: "Entwickler-Freigaben",
+      pendingRequests: "Offene Vorschläge",
+      approve: "Genehmigen",
+      reject: "Ablehnen",
+      noRequests: "Keine offenen Vorschläge vorhanden.",
+      day: "Tag",
+      weekDetail: "Letzte 7 Tage",
+      monthDetail: "Letzte 30 Tage",
+    },
+    leaderboard: {
+      eyebrow: "Leaderboard",
+      title: "Vergleich mit anderen Nutzern",
+      monthlyPoints: "Punkte im Monat",
+      rankingTable: "Ranking-Tabelle",
+      rank: "Rang",
+      name: "Name",
+      day: "Tag",
+      week: "Woche",
+      month: "Monat",
+      noUsers: "Noch keine Nutzer im Leaderboard.",
+      monthCompare: "Monatsvergleich",
+      topUsers: "Top 5 Nutzer",
+    },
+    settings: {
+      navLabel: "Einstellungen",
+      eyebrow: "Einstellungen",
+      title: "Konto verwalten",
+      profileTitle: "Persönliche Daten",
+      saveProfile: "Daten speichern",
+      passwordTitle: "Passwort ändern",
+      currentPassword: "Aktuelles Passwort",
+      newPassword: "Neues Passwort",
+      confirmPassword: "Neues Passwort bestätigen",
+      changePassword: "Passwort aktualisieren",
+      deleteTitle: "Account löschen",
+      deleteText: "Der Account und die dazugehörigen persönlichen Daten werden lokal aus dieser App entfernt.",
+      deleteButton: "Account endgültig löschen",
+    },
+    chat: {
+      eyebrow: "Community",
+      title: "Chat und Abstimmungen",
+      chatTitle: "Community-Chat",
+      chatBody: "Tauscht euch über nachhaltige Aktivitäten aus oder besprecht neue Ideen.",
+      placeholder: (name) => `Was möchtest du teilen, ${name}?`,
+      send: "Senden",
+      noMessages: "Noch keine Nachrichten vorhanden.",
+      proposalTitle: "Custom-Aktivitäten bewerten",
+      proposalBody:
+        "Community-Mitglieder können abstimmen, wie viele Punkte eine manuell eingetragene Aktivität bekommen sollte.",
+      approve: "Zustimmen",
+      reject: "Ablehnen",
+      fromOn: (name, date) => `von ${name} am ${date}`,
+      suggestion: "Vorschlag",
+      communityValue: "Community-Wert",
+      votes: "Stimmen",
+      noProposals: "Noch keine Custom-Aktivitäten zur Abstimmung.",
+      noValues: "Noch keine Werte vorhanden.",
+    },
+    status: {
+      loginFirst: "Bitte melde dich zuerst an.",
+      signedIn: "Du bist angemeldet.",
+      fillAll: "Bitte alle persönlichen Daten ausfüllen.",
+      accountExists: "Zu dieser E-Mail gibt es bereits ein Konto.",
+      registerWelcome: (name) =>
+        `Schön, dass du ein Teil der EcoTrack Community bist, ${name}. Viel Spaß und viel Erfolg.`,
+      accountMissing: "Kein Konto zu dieser E-Mail gefunden.",
+      wrongPassword: "Passwort stimmt nicht.",
+      welcomeBack: (name) => `Willkommen zurück, ${name}.`,
+      loggedOut: "Du wurdest ausgeloggt.",
+      pleaseLogin: "Bitte zuerst anmelden.",
+      activityAdded: (title, points) => `Aktivität hinzugefügt: ${title} (+${points}).`,
+      activitiesAdded: (count, points) => `${count} Aktivitäten hinzugefügt (+${points}).`,
+      requestSubmitted: (title) => `"${title}" wurde zur Entwickler-Freigabe eingereicht.`,
+      requestApproved: (title) => `"${title}" wurde genehmigt und ist jetzt verfügbar.`,
+      requestRejected: (title) => `"${title}" wurde abgelehnt.`,
+      customInvalid: "Bitte gib für Custom einen Namen und gültige Punkte an.",
+      customNote: "Individuell eingetragene Aktivität.",
+      customProposal: (title, points) =>
+        `hat eine Custom-Aktivität vorgeschlagen: "${title}" mit ${points} Punkten. Bitte abstimmen.`,
+      developerMailOpened: (title) =>
+        `Mail-Entwurf fuer "${title}" an ${DEVELOPER_EMAIL} wurde geoeffnet.`,
+      messageSent: "Nachricht gesendet.",
+      voteSaved: (points) => `Deine Abstimmung mit ${points} Punkten wurde gespeichert.`,
+      proposalApproved: (title) => `Du stimmst "${title}" zu.`,
+      proposalRejected: (title) => `Du lehnst "${title}" ab.`,
+      messageDeleted: "Deine Nachricht wurde gelöscht.",
+      profileUpdated: "Deine persönlichen Daten wurden aktualisiert.",
+      currentPasswordWrong: "Das aktuelle Passwort stimmt nicht.",
+      passwordTooShort: "Das neue Passwort muss mindestens 4 Zeichen haben.",
+      passwordMismatch: "Die neuen Passwörter stimmen nicht überein.",
+      passwordChanged: "Dein Passwort wurde aktualisiert.",
+      accountDeleted: "Dein Account wurde gelöscht.",
+    },
+  },
+  en: {
+    primaryViewLabels: {
+      sustainability: "Sustainability",
+      activity: "Sustainable Activity",
+      chat: "Chat",
+    },
+    utilityNav: {
+      activity: "Add Activity",
+      leaderboard: "Leaderboard",
+      dashboard: "Dashboard",
+    },
+    auth: {
+      title: "Start by signing in.",
+      text:
+        "On your first visit you will only see the sign-in screen. After entering your personal details, you will go straight to the protected area of the app.",
+      language: "Choose language",
+      register: "Register",
+      login: "Login",
+      fullName: "Full Name",
+      email: "Email",
+      city: "City",
+      age: "Age",
+      password: "Password",
+      showPassword: "Show password",
+      continue: "Continue to App",
+      signIn: "Sign In",
+    },
+    headerTitle: "Track your sustainable habits at a glance",
+    loggedInAs: "Signed in as",
+    logout: "Log Out",
+    sustainability: {
+      eyebrow: "Sustainability",
+      title: "About the App",
+      goalTitle: "Goal of the App",
+      goalBody:
+        "EcoTrack makes sustainable behavior visible. Users can log activities, compare progress, and track their development in daily life through key metrics.",
+      backgroundTitle: "Background",
+      backgroundBody:
+        "The application combines motivation, self-assessment, and community comparison. This turns sustainability from an abstract idea into a concrete daily action.",
+      projectTitle: "Project Context",
+      projectBody:
+        "This app is a student project by Jens and David Ammann. It is designed to document sustainable activities in a simple way and evaluate them through a modern visual interface.",
+      photoMissingTitle: "Image file is still missing in the project",
+      photoMissingBody:
+        "Place your photo as public/student-team.jpg, public/student-team.jpeg or public/student-team.png and it will appear here automatically.",
+    },
+    activity: {
+      eyebrow: "Sustainable Activity",
+      title: "Add Activity",
+      level: "Level",
+      treeTitle: "EcoTree",
+      treeStageRoots: (progress) => `Roots growing: ${progress}%`,
+      treeStageTrunk: (progress) => `Trunk forming: ${progress}%`,
+      treeStageCrown: (level) => `The tree keeps growing at level ${level}`,
+      levelProgress: (pointsToNext, nextLabel, nextThreshold) =>
+        `${pointsToNext} points left until ${nextLabel} at ${nextThreshold} points.`,
+      progress: "Progress",
+      today: "Today",
+      week: "This Week",
+      saveActivity: "Save Activity",
+      addToList: "Add to List",
+      addAgain: "Add Again",
+      removeFromList: "Remove",
+      batchTitle: "Selection",
+      batchEmpty: "No activities selected yet.",
+      batchSelected: (count, points) => `${count} activities selected • ${points} points`,
+      batchSave: "Save All Selected",
+      batchClear: "Clear List",
+      requestTitle: "Submit New Activity for Approval",
+      requestPlaceholder: "For example cargo bike for weekly shopping",
+      requestPointsPlaceholder: "For example 5",
+      requestSubmit: "Send for Developer Approval",
+      customTitle: "Add Custom Activity",
+      developerSend: "Send to Developer",
+      customLabel: "Activity",
+      customPlaceholder: "For example repaired clothing",
+      customPoints: "Points",
+      customSave: "Save Custom Activity",
+      recentlyActive: "Recently active",
+      tableDate: "Date",
+      tableCategory: "Category",
+      tableActivity: "Activity",
+      tablePoints: "Points",
+      noActivities: "No activities saved yet.",
+    },
+    dashboard: {
+      eyebrow: "Dashboard",
+      title: (name) => `Statistics for ${name}`,
+      rank: (rank, count) => `Rank ${rank} of ${count}`,
+      today: "Today",
+      week: "Week",
+      month: "Month",
+      activities: "Activities",
+      dailyChart: "Daily Chart",
+      dailyRange: "Last 7 Days",
+      weeklyChart: "Weekly Chart",
+      weeklyRange: "Last 4 Weeks",
+      monthlyChart: "Monthly Chart",
+      monthlyRange: "Last 6 Months",
+      statsTable: "Statistics Table",
+      period: "Period",
+      points: "Points",
+      details: "Details",
+      categories: "Categories",
+      developerReview: "Developer Review",
+      pendingRequests: "Open Suggestions",
+      approve: "Approve",
+      reject: "Reject",
+      noRequests: "No open suggestions.",
+      day: "Day",
+      weekDetail: "Last 7 Days",
+      monthDetail: "Last 30 Days",
+    },
+    leaderboard: {
+      eyebrow: "Leaderboard",
+      title: "Compare with Other Users",
+      monthlyPoints: "points this month",
+      rankingTable: "Ranking Table",
+      rank: "Rank",
+      name: "Name",
+      day: "Day",
+      week: "Week",
+      month: "Month",
+      noUsers: "No users in the leaderboard yet.",
+      monthCompare: "Monthly Comparison",
+      topUsers: "Top 5 Users",
+    },
+    settings: {
+      navLabel: "Settings",
+      eyebrow: "Settings",
+      title: "Manage Account",
+      profileTitle: "Personal Details",
+      saveProfile: "Save Details",
+      passwordTitle: "Change Password",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmPassword: "Confirm New Password",
+      changePassword: "Update Password",
+      deleteTitle: "Delete Account",
+      deleteText: "This will remove the account and its personal data locally from this app.",
+      deleteButton: "Delete Account Permanently",
+    },
+    chat: {
+      eyebrow: "Community",
+      title: "Chat and Voting",
+      chatTitle: "Community Chat",
+      chatBody: "Talk about sustainable activities or discuss new ideas.",
+      placeholder: (name) => `What would you like to share, ${name}?`,
+      send: "Send",
+      noMessages: "No messages yet.",
+      proposalTitle: "Rate Custom Activities",
+      proposalBody:
+        "Community members can vote on how many points a manually entered activity should receive.",
+      approve: "Approve",
+      reject: "Reject",
+      fromOn: (name, date) => `by ${name} on ${date}`,
+      suggestion: "Proposal",
+      communityValue: "Community value",
+      votes: "votes",
+      noProposals: "No custom activities to vote on yet.",
+      noValues: "No values yet.",
+    },
+    status: {
+      loginFirst: "Please sign in first.",
+      signedIn: "You are signed in.",
+      fillAll: "Please fill in all personal details.",
+      accountExists: "An account already exists for this email.",
+      registerWelcome: (name) =>
+        `Welcome to the EcoTrack community, ${name}. Have fun and good luck.`,
+      accountMissing: "No account found for this email.",
+      wrongPassword: "Password is incorrect.",
+      welcomeBack: (name) => `Welcome back, ${name}.`,
+      loggedOut: "You have been logged out.",
+      pleaseLogin: "Please sign in first.",
+      activityAdded: (title, points) => `Activity added: ${title} (+${points}).`,
+      activitiesAdded: (count, points) => `${count} activities added (+${points}).`,
+      requestSubmitted: (title) => `"${title}" was submitted for developer approval.`,
+      requestApproved: (title) => `"${title}" was approved and is now available.`,
+      requestRejected: (title) => `"${title}" was rejected.`,
+      customInvalid: "Please enter a custom activity name and valid points.",
+      customNote: "Custom activity entered manually.",
+      customProposal: (title, points) =>
+        `proposed a custom activity: "${title}" with ${points} points. Please vote.`,
+      developerMailOpened: (title) =>
+        `Draft email for "${title}" to ${DEVELOPER_EMAIL} was opened.`,
+      messageSent: "Message sent.",
+      voteSaved: (points) => `Your vote with ${points} points has been saved.`,
+      proposalApproved: (title) => `You approved "${title}".`,
+      proposalRejected: (title) => `You rejected "${title}".`,
+      messageDeleted: "Your message was deleted.",
+      profileUpdated: "Your personal details were updated.",
+      currentPasswordWrong: "The current password is incorrect.",
+      passwordTooShort: "The new password must be at least 4 characters long.",
+      passwordMismatch: "The new passwords do not match.",
+      passwordChanged: "Your password was updated.",
+      accountDeleted: "Your account was deleted.",
+    },
+  },
+};
+
+const SUGGESTIONS = {
+  mobility: [
+    { title: "Mit dem Fahrrad zur Arbeit", points: 2, note: "Bike to Work." },
+    { title: "Zu Fuß zur Arbeit", points: 3, note: "Walk to Work." },
+    { title: "Öffentliche Verkehrsmittel genutzt", points: 3, note: "Use Public Transport." },
+    { title: "Fahrgemeinschaft organisiert", points: 2, note: "Carpooling." },
+    { title: "Home Office statt Pendeln", points: 5, note: "Spart den kompletten Arbeitsweg." },
+    { title: "Kurze Strecke ohne Auto", points: 3, note: "Short Trip Without Car unter 5 km." },
+    { title: "E-Bike statt Auto genutzt", points: 3, note: "Use E-Bike Instead of Car." },
+  ],
+  nutrition: [
+    { title: "Vegetarisch gegessen", points: 3, note: "Eat Vegetarian Meal." },
+    { title: "Vegan gegessen", points: 4, note: "Eat Vegan Meal." },
+    { title: "Selbst gekocht", points: 2, note: "Cook at Home." },
+    { title: "Reste verwertet", points: 3, note: "Use Leftovers." },
+    { title: "Leitungswasser statt Flaschenwasser", points: 2, note: "Drink Tap Water Instead of Bottled." },
+    { title: "Regionale Produkte gekauft", points: 2, note: "Buy Regional Products." },
+    { title: "Lebensmittel vor Verschwendung gerettet", points: 5, note: "Save Food from Waste." },
+  ],
+  household: [
+    { title: "Duschzeit reduziert", points: 3, note: "Reduce Shower Time." },
+    { title: "Waschmaschine voll beladen genutzt", points: 2, note: "Use Washing Machine Fully Loaded." },
+    { title: "Wäsche luftgetrocknet", points: 3, note: "Air Dry Laundry statt Trockner." },
+    { title: "Geschirrspüler im Eco-Modus", points: 2, note: "Use Dishwasher Eco Mode." },
+    { title: "Standby-Geräte ausgeschaltet", points: 2, note: "Turn Off Standby Devices." },
+    { title: "Heizung gesenkt", points: 4, note: "Lower Heating Temperature." },
+    { title: "Licht ausgeschaltet, wenn nicht nötig", points: 1, note: "Switch Off Lights When Not Needed." },
+  ],
+  custom: [
+    { title: "Second-Hand-Produkt gekauft", points: 3, note: "Buy Second Hand Product." },
+    { title: "Kleidung repariert", points: 4, note: "Repair Clothing." },
+    { title: "Elektronisches Gerät repariert", points: 5, note: "Repair Electronic Device." },
+    { title: "Wiederverwendbare Produkte genutzt", points: 2, note: "Use Reusable Products." },
+    { title: "Baum oder Pflanze gesetzt", points: 5, note: "Plant a Tree or Plant." },
+    { title: "An Nachhaltigkeits-Event teilgenommen", points: 4, note: "Participate in Sustainability Event." },
+  ],
+};
+
+const EMPTY_STATE = {
+  accounts: [],
+  activeAccountId: null,
+  chatMessages: [],
+  customProposals: [],
+  activityRequests: [],
+  approvedActivities: [],
+};
+
+export default function Page() {
+  const [appState, setAppState] = useState(EMPTY_STATE);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [language, setLanguage] = useState("de");
+  const [status, setStatus] = useState(COPY.de.status.loginFirst);
+  const [authMode, setAuthMode] = useState("register");
+  const [view, setView] = useState("sustainability");
+  const [selectedCategory, setSelectedCategory] = useState("mobility");
+  const [requestTitle, setRequestTitle] = useState("");
+  const [requestPoints, setRequestPoints] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
+  const [pendingActivities, setPendingActivities] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const copy = COPY[language];
+
+  useEffect(() => {
+    let nextLanguage = "de";
+    if (typeof window !== "undefined") {
+      const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
+      if (storedLanguage === "de" || storedLanguage === "en") {
+        nextLanguage = storedLanguage;
+        setLanguage(storedLanguage);
+      }
+    }
+
+    const loaded = loadState();
+    setAppState(loaded);
+    setHasLoaded(true);
+
+    if (loaded.activeAccountId) {
+      setStatus(COPY[nextLanguage].status.signedIn);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoaded || typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+  }, [appState, hasLoaded]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(LANGUAGE_KEY, language);
+  }, [language]);
+
+  const activeAccount = getActiveAccount(appState);
+  const leaderboard = getLeaderboardData(appState.accounts);
+  const activeStats = activeAccount ? getAccountStats(activeAccount, language) : createEmptyStats(language);
+  const activeRank = activeAccount
+    ? leaderboard.find((item) => item.account.id === activeAccount.id)?.rank || "-"
+    : "-";
+  const levelStats = getLevelStats(activeStats.totalPoints);
+  const proposals = appState.customProposals || [];
+  const activityRequests = appState.activityRequests || [];
+  const approvedActivities = appState.approvedActivities || [];
+  const categorySuggestions = [
+    ...SUGGESTIONS[selectedCategory],
+    ...approvedActivities.filter((item) => item.category === selectedCategory),
+  ];
+
+  function updateAppState(updater) {
+    setAppState((current) => (typeof updater === "function" ? updater(current) : updater));
+  }
+
+  function handleRegister(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const city = String(formData.get("city") || "").trim();
+    const age = String(formData.get("age") || "").trim();
+    const password = String(formData.get("password") || "").trim();
+
+    if (!name || !email || !city || !age || password.length < 4) {
+      setStatus(copy.status.fillAll);
+      return;
+    }
+
+    if (appState.accounts.some((account) => account.email === email)) {
+      setStatus(copy.status.accountExists);
+      return;
+    }
+
+    const account = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+      city,
+      age,
+      password,
+      createdAt: new Date().toISOString(),
+      activities: [],
+    };
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: [...current.accounts, account],
+      activeAccountId: account.id,
+    }));
+
+    event.currentTarget.reset();
+    setView("sustainability");
+    setStatus(copy.status.registerWelcome(account.name));
+  }
+
+  function handleLogin(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const password = String(formData.get("password") || "").trim();
+
+    const account = appState.accounts.find((item) => item.email === email);
+    if (!account) {
+      setStatus(copy.status.accountMissing);
+      return;
+    }
+
+    if (account.password !== password) {
+      setStatus(copy.status.wrongPassword);
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      activeAccountId: account.id,
+    }));
+
+    event.currentTarget.reset();
+    setView("sustainability");
+    setStatus(copy.status.welcomeBack(account.name));
+  }
+
+  function handleLogout() {
+    updateAppState((current) => ({
+      ...current,
+      activeAccountId: null,
+    }));
+
+    setView("sustainability");
+    setStatus(copy.status.loggedOut);
+  }
+
+  function handleUpdateProfile(event) {
+    event.preventDefault();
+    if (!activeAccount) {
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const city = String(formData.get("city") || "").trim();
+    const age = String(formData.get("age") || "").trim();
+
+    if (!name || !email || !city || !age) {
+      setStatus(copy.status.fillAll);
+      return;
+    }
+
+    if (
+      appState.accounts.some(
+        (account) => account.id !== activeAccount.id && account.email === email,
+      )
+    ) {
+      setStatus(copy.status.accountExists);
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.map((account) =>
+        account.id === current.activeAccountId
+          ? { ...account, name, email, city, age }
+          : account,
+      ),
+    }));
+
+    setStatus(copy.status.profileUpdated);
+  }
+
+  function handleChangePassword(event) {
+    event.preventDefault();
+    if (!activeAccount) {
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const currentPassword = String(formData.get("currentPassword") || "").trim();
+    const nextPassword = String(formData.get("newPassword") || "").trim();
+    const confirmPassword = String(formData.get("confirmPassword") || "").trim();
+
+    if (currentPassword !== activeAccount.password) {
+      setStatus(copy.status.currentPasswordWrong);
+      return;
+    }
+
+    if (nextPassword.length < 4) {
+      setStatus(copy.status.passwordTooShort);
+      return;
+    }
+
+    if (nextPassword !== confirmPassword) {
+      setStatus(copy.status.passwordMismatch);
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.map((account) =>
+        account.id === current.activeAccountId
+          ? { ...account, password: nextPassword }
+          : account,
+      ),
+    }));
+
+    event.currentTarget.reset();
+    setStatus(copy.status.passwordChanged);
+  }
+
+  function handleDeleteAccount() {
+    if (!activeAccount) {
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.filter((account) => account.id !== current.activeAccountId),
+      activeAccountId: null,
+      chatMessages: (current.chatMessages || []).filter(
+        (entry) => entry.accountId !== current.activeAccountId,
+      ),
+      customProposals: (current.customProposals || []).filter(
+        (proposal) => proposal.createdBy !== current.activeAccountId,
+      ),
+      activityRequests: (current.activityRequests || []).filter(
+        (request) => request.createdBy !== current.activeAccountId,
+      ),
+    }));
+
+    setView("sustainability");
+    setStatus(copy.status.accountDeleted);
+  }
+
+  function appendChatEntry(current, message) {
+    const entry = {
+      id: crypto.randomUUID(),
+      accountId: activeAccount?.id || "system",
+      author: activeAccount?.name || "System",
+      message,
+      createdAt: new Date().toISOString(),
+    };
+
+    return [entry, ...(current.chatMessages || [])].slice(0, 80);
+  }
+
+  function addActivity(activity) {
+    if (!activeAccount) {
+      setStatus(copy.status.pleaseLogin);
+      return;
+    }
+
+    const entry = {
+      id: crypto.randomUUID(),
+      category: activity.category,
+      title: activity.title,
+      points: activity.points,
+      note: activity.note || "",
+      createdAt: new Date().toISOString(),
+    };
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.map((account) => {
+        if (account.id !== current.activeAccountId) {
+          return account;
+        }
+
+        return {
+          ...account,
+          activities: [entry, ...account.activities],
+        };
+      }),
+    }));
+
+    setView("dashboard");
+    setStatus(copy.status.activityAdded(entry.title, entry.points));
+  }
+
+  function addActivities(activities) {
+    if (!activeAccount || !activities.length) {
+      if (!activeAccount) {
+        setStatus(copy.status.pleaseLogin);
+      }
+      return;
+    }
+
+    const entries = activities.map((activity) => ({
+      id: crypto.randomUUID(),
+      category: activity.category,
+      title: activity.title,
+      points: activity.points,
+      note: activity.note || "",
+      createdAt: new Date().toISOString(),
+    }));
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.map((account) => {
+        if (account.id !== current.activeAccountId) {
+          return account;
+        }
+
+        return {
+          ...account,
+          activities: [...entries, ...account.activities],
+        };
+      }),
+    }));
+
+    const totalPoints = entries.reduce((sum, item) => sum + item.points, 0);
+    setPendingActivities([]);
+    setView("dashboard");
+    setStatus(copy.status.activitiesAdded(entries.length, totalPoints));
+  }
+
+  function handlePresetActivity(item) {
+    const queueItem = {
+      id: crypto.randomUUID(),
+      category: selectedCategory,
+      title: item.title,
+      points: item.points,
+      note: item.note,
+    };
+
+    setPendingActivities((current) => [...current, queueItem]);
+  }
+
+  function handleSavePendingActivities() {
+    addActivities(pendingActivities);
+  }
+
+  function handleClearPendingActivities() {
+    setPendingActivities([]);
+  }
+
+  function handleRemovePendingActivity(activityToRemove) {
+    setPendingActivities((current) =>
+      current.filter((entry) => entry.id !== activityToRemove.id),
+    );
+  }
+
+  function submitActivityRequest(category, title, points) {
+    updateAppState((current) => ({
+      ...current,
+      activityRequests: [
+        {
+          id: crypto.randomUUID(),
+          category,
+          title,
+          proposedPoints: points,
+          createdBy: current.activeAccountId,
+          createdByName: activeAccount.name,
+          createdAt: new Date().toISOString(),
+        },
+        ...(current.activityRequests || []),
+      ].slice(0, 40),
+    }));
+
+    if (typeof window !== "undefined") {
+      const subject = encodeURIComponent(`EcoTrack Vorschlag: ${title}`);
+      const body = encodeURIComponent(
+        `Neuer Aktivitaetsvorschlag fuer EcoTrack\n\nKategorie: ${getCategoryLabel(category, "de")}\nAktivitaet: ${title}\nVorgeschlagene Punkte: ${points}\nEingereicht von: ${activeAccount.name} (${activeAccount.email})`,
+      );
+      window.location.href = `mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`;
+    }
+
+    setStatus(`${copy.status.requestSubmitted(title)} ${copy.status.developerMailOpened(title)}`);
+  }
+
+  function handleSubmitActivityRequest(event) {
+    event.preventDefault();
+
+    const title = requestTitle.trim();
+    const points = Number(requestPoints);
+
+    if (!title || Number.isNaN(points) || points < 1) {
+      setStatus(copy.status.customInvalid);
+      return;
+    }
+
+    submitActivityRequest(selectedCategory, title, points);
+    setRequestTitle("");
+    setRequestPoints("");
+  }
+
+  function handleReviewActivityRequest(requestId, decision) {
+    const request = activityRequests.find((item) => item.id === requestId);
+    if (!request) {
+      return;
+    }
+
+    updateAppState((current) => {
+      const remainingRequests = (current.activityRequests || []).filter((item) => item.id !== requestId);
+
+      if (decision === "approve") {
+        return {
+          ...current,
+          activityRequests: remainingRequests,
+          approvedActivities: [
+            {
+              id: crypto.randomUUID(),
+              category: request.category,
+              title: request.title,
+              points: request.proposedPoints,
+              note: current.activeAccountId === request.createdBy ? copy.status.customNote : "",
+            },
+            ...(current.approvedActivities || []),
+          ].slice(0, 80),
+        };
+      }
+
+      return {
+        ...current,
+        activityRequests: remainingRequests,
+      };
+    });
+
+    setStatus(
+      decision === "approve"
+        ? copy.status.requestApproved(request.title)
+        : copy.status.requestRejected(request.title),
+    );
+  }
+
+  function handleSendChat(event) {
+    event.preventDefault();
+    const text = chatMessage.trim();
+
+    if (!text || !activeAccount) {
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      chatMessages: appendChatEntry(current, text),
+    }));
+
+    setChatMessage("");
+    setStatus(copy.status.messageSent);
+  }
+
+  function handleVoteOnProposal(proposalId, points) {
+    if (!activeAccount) {
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      customProposals: (current.customProposals || []).map((proposal) => {
+        if (proposal.id !== proposalId) {
+          return proposal;
+        }
+
+        return {
+          ...proposal,
+          votes: {
+            ...(proposal.votes || {}),
+            [current.activeAccountId]: points,
+          },
+        };
+      }),
+    }));
+
+    setStatus(copy.status.voteSaved(points));
+  }
+
+  function handleDeleteChatMessage(messageId) {
+    if (!activeAccount) {
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      chatMessages: (current.chatMessages || []).filter((entry) => {
+        if (entry.id !== messageId) {
+          return true;
+        }
+
+        return entry.accountId !== current.activeAccountId;
+      }),
+    }));
+
+    setStatus(copy.status.messageDeleted);
+  }
+
+  function handleProposalReaction(proposal, reaction) {
+    if (!activeAccount) {
+      return;
+    }
+
+    if (reaction === "approve") {
+      updateAppState((current) => ({
+        ...current,
+        customProposals: (current.customProposals || []).map((item) => {
+          if (item.id !== proposal.id) {
+            return item;
+          }
+
+          return {
+            ...item,
+            votes: {
+              ...(item.votes || {}),
+              [current.activeAccountId]: proposal.proposedPoints,
+            },
+          };
+        }),
+        chatMessages: appendChatEntry(current, copy.status.proposalApproved(proposal.title)),
+      }));
+
+      setStatus(copy.status.proposalApproved(proposal.title));
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      customProposals: (current.customProposals || []).map((item) => {
+        if (item.id !== proposal.id) {
+          return item;
+        }
+
+        return {
+          ...item,
+          votes: {
+            ...(item.votes || {}),
+            [current.activeAccountId]: 0,
+          },
+        };
+      }),
+      chatMessages: appendChatEntry(current, copy.status.proposalRejected(proposal.title)),
+    }));
+
+    setStatus(copy.status.proposalRejected(proposal.title));
+  }
+
+  if (!activeAccount) {
+    return (
+      <div className="auth-shell">
+        <section className="auth-stage">
+          <div className="auth-copy">
+            <p className="eyebrow">EcoTrack</p>
+            <h1>{copy.auth.title}</h1>
+            <p className="auth-text">{copy.auth.text}</p>
+            <div className="language-block">
+              <p className="language-label">{copy.auth.language}</p>
+              <div className="auth-pill-row language-row">
+                <button
+                  type="button"
+                  className={`pill-button${language === "de" ? " active" : ""}`}
+                  onClick={() => setLanguage("de")}
+                >
+                  Deutsch
+                </button>
+                <button
+                  type="button"
+                  className={`pill-button${language === "en" ? " active" : ""}`}
+                  onClick={() => setLanguage("en")}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+            <div className="auth-pill-row">
+              <button
+                type="button"
+                className={`pill-button${authMode === "register" ? " active" : ""}`}
+                onClick={() => setAuthMode("register")}
+              >
+                {copy.auth.register}
+              </button>
+              <button
+                type="button"
+                className={`pill-button${authMode === "login" ? " active" : ""}`}
+                onClick={() => setAuthMode("login")}
+              >
+                {copy.auth.login}
+              </button>
+            </div>
+          </div>
+
+          <div className="auth-card">
+            {authMode === "register" ? (
+              <form className="stack" onSubmit={handleRegister}>
+                <label>
+                  {copy.auth.fullName}
+                  <input name="name" type="text" maxLength="40" placeholder="Jens Ammann" required />
+                </label>
+                <label>
+                  {copy.auth.email}
+                  <input name="email" type="email" maxLength="80" placeholder="name@example.com" required />
+                </label>
+                <label>
+                  {copy.auth.city}
+                  <input name="city" type="text" maxLength="40" placeholder="Berlin" required />
+                </label>
+                <label>
+                  {copy.auth.age}
+                  <input name="age" type="number" min="16" max="99" placeholder="23" required />
+                </label>
+                <label>
+                  {copy.auth.password}
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    minLength="4"
+                    maxLength="40"
+                    required
+                  />
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(event) => setShowPassword(event.target.checked)}
+                  />
+                  <span>{copy.auth.showPassword}</span>
+                </label>
+                <button type="submit" className="primary-button">
+                  {copy.auth.continue}
+                </button>
+              </form>
+            ) : (
+              <form className="stack" onSubmit={handleLogin}>
+                <label>
+                  {copy.auth.email}
+                  <input name="email" type="email" maxLength="80" placeholder="name@example.com" required />
+                </label>
+                <label>
+                  {copy.auth.password}
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    minLength="4"
+                    maxLength="40"
+                    required
+                  />
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(event) => setShowPassword(event.target.checked)}
+                  />
+                  <span>{copy.auth.showPassword}</span>
+                </label>
+                <button type="submit" className="primary-button">
+                  {copy.auth.signIn}
+                </button>
+              </form>
+            )}
+            <p className="status-message auth-status">{status}</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-shell">
+      <header className="app-header">
+        <div className="brand-block">
+          <div className="brand-mark">
+            <img className="brand-logo" src={withBasePath("/ecotrack-logo.svg")} alt="EcoTrack Logo" />
+            <p className="eyebrow">EcoTrack</p>
+          </div>
+          <h1>{copy.headerTitle}</h1>
+        </div>
+
+        <div className="header-right">
+          <div className="login-state">
+            {copy.loggedInAs} <strong>{activeAccount.name}</strong>
+          </div>
+          <button type="button" className="secondary-button" onClick={() => setView("settings")}>
+            {copy.settings.navLabel}
+          </button>
+          <button type="button" className="secondary-button" onClick={handleLogout}>
+            {copy.logout}
+          </button>
+        </div>
+      </header>
+
+      <nav className="top-nav" aria-label="Hauptnavigation">
+        {Object.entries(copy.primaryViewLabels).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`nav-button${view === key ? " active" : ""}`}
+            onClick={() => setView(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <main className="content-stack">
+        {view === "sustainability" && <SustainabilityPanel copy={copy} />}
+
+        {view === "activity" && (
+          <ActivityPanel
+            activeAccount={activeAccount}
+            stats={activeStats}
+            levelStats={levelStats}
+            language={language}
+            copy={copy}
+            pendingActivities={pendingActivities}
+            categorySuggestions={categorySuggestions}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            handlePresetActivity={handlePresetActivity}
+            handleSavePendingActivities={handleSavePendingActivities}
+            handleClearPendingActivities={handleClearPendingActivities}
+            handleRemovePendingActivity={handleRemovePendingActivity}
+            handleSubmitActivityRequest={handleSubmitActivityRequest}
+            requestTitle={requestTitle}
+            setRequestTitle={setRequestTitle}
+            requestPoints={requestPoints}
+            setRequestPoints={setRequestPoints}
+            setView={setView}
+            status={status}
+          />
+        )}
+
+        {view === "dashboard" && (
+          <DashboardPanel
+            account={activeAccount}
+            stats={activeStats}
+            copy={copy}
+            language={language}
+            activityRequests={activityRequests}
+            handleReviewActivityRequest={handleReviewActivityRequest}
+            rank={activeRank}
+            communityCount={appState.accounts.length}
+            setView={setView}
+          />
+        )}
+
+        {view === "leaderboard" && (
+          <LeaderboardPanel
+            leaderboard={leaderboard}
+            copy={copy}
+            activeAccountId={appState.activeAccountId}
+            setView={setView}
+          />
+        )}
+
+        {view === "chat" && (
+          <ChatPanel
+            activeAccount={activeAccount}
+            language={language}
+            copy={copy}
+            chatMessages={appState.chatMessages || []}
+            proposals={proposals}
+            chatMessage={chatMessage}
+            setChatMessage={setChatMessage}
+            handleSendChat={handleSendChat}
+            handleVoteOnProposal={handleVoteOnProposal}
+            handleProposalReaction={handleProposalReaction}
+            handleDeleteChatMessage={handleDeleteChatMessage}
+          />
+        )}
+
+        {view === "settings" && (
+          <SettingsPanel
+            account={activeAccount}
+            copy={copy}
+            handleUpdateProfile={handleUpdateProfile}
+            handleChangePassword={handleChangePassword}
+            handleDeleteAccount={handleDeleteAccount}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+function SustainabilityPanel({ copy }) {
+  return (
+    <section className="panel info-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.sustainability.eyebrow}</p>
+          <h2>{copy.sustainability.title}</h2>
+        </div>
+      </div>
+
+      <div className="info-grid">
+        <article className="info-card feature-card">
+          <h3>{copy.sustainability.goalTitle}</h3>
+          <p>{copy.sustainability.goalBody}</p>
+          <div className="goal-visual" aria-hidden="true">
+            <img className="feature-image feature-leaf" src={withBasePath("/monstera-blatt-l.jpg")} alt="" />
+          </div>
+        </article>
+        <article className="info-card feature-card">
+          <h3>{copy.sustainability.backgroundTitle}</h3>
+          <p>{copy.sustainability.backgroundBody}</p>
+          <div className="goal-visual" aria-hidden="true">
+            <img
+              className="feature-image feature-community"
+              src={withBasePath("/Nachhaltigkeits_Community.jpeg")}
+              alt=""
+            />
+          </div>
+        </article>
+        <article className="info-card student-card">
+          <h3>{copy.sustainability.projectTitle}</h3>
+          <p>{copy.sustainability.projectBody}</p>
+          <StudentPhoto copy={copy} />
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function StudentPhoto({ copy }) {
+  const photoCandidates = [
+    withBasePath("/student-team.jpg"),
+    withBasePath("/student-team.jpeg"),
+    withBasePath("/student-team.png"),
+  ];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [hasImage, setHasImage] = useState(true);
+
+  function handleImageError() {
+    if (photoIndex < photoCandidates.length - 1) {
+      setPhotoIndex((current) => current + 1);
+      return;
+    }
+
+    setHasImage(false);
+  }
+
+  return (
+    <div className="student-photo-wrap">
+      {hasImage ? (
+        <img
+          className="student-photo"
+          src={photoCandidates[photoIndex]}
+          alt="Jens und David am See"
+          onError={handleImageError}
+        />
+      ) : (
+        <div className="student-photo-placeholder">
+          <p className="eyebrow">Teamfoto</p>
+          <h4>{copy.sustainability.photoMissingTitle}</h4>
+          <p>{copy.sustainability.photoMissingBody}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActivityPanel({
+  activeAccount,
+  stats,
+  levelStats,
+  language,
+  copy,
+  pendingActivities,
+  categorySuggestions,
+  selectedCategory,
+  setSelectedCategory,
+  handlePresetActivity,
+  handleSavePendingActivities,
+  handleClearPendingActivities,
+  handleRemovePendingActivity,
+  handleSubmitActivityRequest,
+  requestTitle,
+  setRequestTitle,
+  requestPoints,
+  setRequestPoints,
+  setView,
+  status,
+}) {
+  const suggestions = categorySuggestions;
+  const pendingTotalPoints = pendingActivities.reduce((sum, item) => sum + item.points, 0);
+
+  return (
+    <section className="panel activity-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.activity.eyebrow}</p>
+          <h2>{copy.activity.title}</h2>
+        </div>
+        <UtilityNav activeView="activity" setView={setView} copy={copy} />
+      </div>
+
+      <section className="level-panel" aria-label="Level-Anzeige">
+        <div className="level-layout">
+          <div className="level-copy-block">
+            <div className="level-head">
+              <div>
+                <p className="eyebrow">{copy.activity.level}</p>
+                <h3 className="subhead">
+                  {activeAccount.name}: {copy.activity.level} {levelStats.level}
+                </h3>
+              </div>
+              <p className="level-points">{stats.totalPoints} {copy.dashboard.points}</p>
+            </div>
+            <p className="level-copy">
+              {copy.activity.levelProgress(levelStats.pointsToNext, levelStats.nextLabel, levelStats.nextThreshold)}
+            </p>
+            <div className="level-track" aria-label="Fortschritt zum nächsten Level">
+              <div className="level-fill" style={{ width: `${levelStats.progressPercent}%` }} />
+            </div>
+            <div className="level-meta">
+              <p>{levelStats.progressPercent}% {copy.activity.progress}</p>
+              <p>{copy.activity.today}: {stats.dayTotal}</p>
+              <p>{copy.activity.week}: {stats.weekTotal}</p>
+            </div>
+          </div>
+          <LevelTree levelStats={levelStats} copy={copy} />
+        </div>
+      </section>
+
+      <div className="category-row">
+        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`category-button${selectedCategory === key ? " active" : ""}`}
+            onClick={() => setSelectedCategory(key)}
+          >
+            {label[language]}
+          </button>
+        ))}
+      </div>
+
+      <div className="batch-card">
+        <div>
+          <p className="eyebrow">{copy.activity.batchTitle}</p>
+          <p className="batch-copy">
+            {pendingActivities.length
+              ? copy.activity.batchSelected(pendingActivities.length, pendingTotalPoints)
+              : copy.activity.batchEmpty}
+          </p>
+          {pendingActivities.length ? (
+            <div className="batch-list">
+              {pendingActivities.map((item) => (
+                <div key={item.id} className="batch-item">
+                  <div className="batch-item-copy">
+                    <strong>{item.title}</strong>
+                    <span>
+                      {getCategoryLabel(item.category, language)} • +{item.points}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="batch-remove"
+                    onClick={() => handleRemovePendingActivity(item)}
+                  >
+                    {copy.activity.removeFromList}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="batch-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleClearPendingActivities}
+            disabled={!pendingActivities.length}
+          >
+            {copy.activity.batchClear}
+          </button>
+          <button
+            type="button"
+            className="primary-button small-button"
+            onClick={handleSavePendingActivities}
+            disabled={!pendingActivities.length}
+          >
+            {copy.activity.batchSave}
+          </button>
+        </div>
+      </div>
+
+      {suggestions.length ? (
+        <div className="suggestion-grid">
+          {suggestions.map((item) => (
+            <article
+              key={item.title}
+              className={`suggestion-card${
+                pendingActivities.some(
+                  (entry) => entry.category === selectedCategory && entry.title === item.title,
+                )
+                  ? " active-selection"
+                  : ""
+              }`}
+            >
+              <p className="suggestion-points">+{item.points}</p>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+              <button
+                type="button"
+                className="primary-button small-button"
+                onClick={() => handlePresetActivity(item)}
+              >
+                {pendingActivities.some(
+                  (entry) => entry.category === selectedCategory && entry.title === item.title,
+                )
+                  ? copy.activity.addAgain
+                  : copy.activity.addToList}
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      <form className="custom-card request-card" onSubmit={handleSubmitActivityRequest}>
+        <h3>{copy.activity.requestTitle}</h3>
+        <label>
+          {copy.activity.customLabel}
+          <input
+            type="text"
+            value={requestTitle}
+            onChange={(event) => setRequestTitle(event.target.value)}
+            placeholder={copy.activity.requestPlaceholder}
+            required
+          />
+        </label>
+        <label>
+          {copy.activity.customPoints}
+          <input
+            type="number"
+            min="1"
+            max="30"
+            value={requestPoints}
+            onChange={(event) => setRequestPoints(event.target.value)}
+            placeholder={copy.activity.requestPointsPlaceholder}
+            required
+          />
+        </label>
+        <button type="submit" className="secondary-button small-button">
+          {copy.activity.requestSubmit}
+        </button>
+      </form>
+
+      <div className="activity-footer">
+        <div>
+          <p className="eyebrow">{copy.activity.recentlyActive}</p>
+          <h3 className="subhead">{activeAccount.name}</h3>
+        </div>
+        <p className="status-message">{status}</p>
+      </div>
+
+      <div className="table-card">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>{copy.activity.tableDate}</th>
+              <th>{copy.activity.tableCategory}</th>
+              <th>{copy.activity.tableActivity}</th>
+              <th>{copy.activity.tablePoints}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activeAccount.activities.length ? (
+              activeAccount.activities.slice(0, 6).map((activity) => (
+                <tr key={activity.id}>
+                  <td>{formatDate(activity.createdAt, language)}</td>
+                  <td>{getCategoryLabel(activity.category, language)}</td>
+                  <td>{activity.title}</td>
+                  <td>+{activity.points}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4">{copy.activity.noActivities}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function LevelTree({ levelStats, copy }) {
+  const growth = getTreeGrowth(levelStats, copy);
+
+  return (
+    <div className="level-tree-card" aria-label={copy.activity.treeTitle}>
+      <p className="level-tree-label">{copy.activity.treeTitle}</p>
+      <div className="level-tree-scene">
+        <div className="tree-canopy canopy-back" style={growth.canopyBackStyle} />
+        <div className="tree-canopy canopy-mid" style={growth.canopyMidStyle} />
+        <div className="tree-canopy canopy-front" style={growth.canopyFrontStyle} />
+        <div className="tree-trunk" style={growth.trunkStyle}>
+          <div className="tree-branches" style={growth.branchStyle} />
+        </div>
+        <div className="tree-ground" />
+        <div className="tree-roots" style={growth.rootStyle}>
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+      <p className="level-tree-note">{growth.stageLabel}</p>
+    </div>
+  );
+}
+
+function DashboardPanel({
+  account,
+  stats,
+  copy,
+  language,
+  activityRequests,
+  handleReviewActivityRequest,
+  rank,
+  communityCount,
+  setView,
+}) {
+  const periodRows = [
+    { label: copy.dashboard.day, value: stats.dayTotal, detail: copy.dashboard.today },
+    { label: copy.dashboard.week, value: stats.weekTotal, detail: copy.dashboard.weekDetail },
+    { label: copy.dashboard.month, value: stats.monthTotal, detail: copy.dashboard.monthDetail },
+  ];
+
+  return (
+    <section className="panel dashboard-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.dashboard.eyebrow}</p>
+          <h2>{copy.dashboard.title(account.name)}</h2>
+        </div>
+        <div className="dashboard-head-actions">
+          <div className="summary-chip">{copy.dashboard.rank(rank, communityCount)}</div>
+          <UtilityNav activeView="dashboard" setView={setView} copy={copy} />
+        </div>
+      </div>
+
+      <div className="stats-grid">
+        <article className="metric-card accent-card">
+          <p className="metric-label">{copy.dashboard.today}</p>
+          <p className="metric-value">{stats.dayTotal}</p>
+        </article>
+        <article className="metric-card">
+          <p className="metric-label">{copy.dashboard.week}</p>
+          <p className="metric-value">{stats.weekTotal}</p>
+        </article>
+        <article className="metric-card">
+          <p className="metric-label">{copy.dashboard.month}</p>
+          <p className="metric-value">{stats.monthTotal}</p>
+        </article>
+        <article className="metric-card">
+          <p className="metric-label">{copy.dashboard.activities}</p>
+          <p className="metric-value">{account.activities.length}</p>
+        </article>
+      </div>
+
+      <div className="analytics-grid">
+        <article className="chart-card">
+          <div className="chart-head">
+            <h3>{copy.dashboard.dailyChart}</h3>
+            <p>{copy.dashboard.dailyRange}</p>
+          </div>
+          <BarChart items={stats.dailySeries} />
+        </article>
+        <article className="chart-card">
+          <div className="chart-head">
+            <h3>{copy.dashboard.weeklyChart}</h3>
+            <p>{copy.dashboard.weeklyRange}</p>
+          </div>
+          <BarChart items={stats.weeklySeries} />
+        </article>
+        <article className="chart-card">
+          <div className="chart-head">
+            <h3>{copy.dashboard.monthlyChart}</h3>
+            <p>{copy.dashboard.monthlyRange}</p>
+          </div>
+          <BarChart items={stats.monthlySeries} />
+        </article>
+      </div>
+
+      <div className="table-layout">
+        <div className="table-card">
+          <h3 className="subhead">{copy.dashboard.statsTable}</h3>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{copy.dashboard.period}</th>
+                <th>{copy.dashboard.points}</th>
+                <th>{copy.dashboard.details}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {periodRows.map((row) => (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  <td>{row.value}</td>
+                  <td>{row.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="table-card">
+          <h3 className="subhead">{copy.dashboard.categories}</h3>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{copy.activity.tableCategory}</th>
+                <th>{copy.dashboard.points}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.categoryRows.map((row) => (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  <td>{row.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="table-card">
+        <h3 className="subhead">{copy.dashboard.developerReview}</h3>
+        <p className="chat-note">{copy.dashboard.pendingRequests}</p>
+        <div className="proposal-list">
+          {activityRequests.length ? (
+            activityRequests.map((request) => (
+              <article key={request.id} className="proposal-card">
+                <div className="proposal-head">
+                  <div>
+                    <h4>{request.title}</h4>
+                    <p>{request.createdByName}</p>
+                  </div>
+                  <div className="proposal-score">
+                    <span>{getCategoryLabel(request.category, language)}</span>
+                    <strong>{request.proposedPoints}</strong>
+                  </div>
+                </div>
+                <div className="proposal-actions">
+                  <button
+                    type="button"
+                    className="primary-button small-button"
+                    onClick={() => handleReviewActivityRequest(request.id, "approve")}
+                  >
+                    {copy.dashboard.approve}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button small-button"
+                    onClick={() => handleReviewActivityRequest(request.id, "reject")}
+                  >
+                    {copy.dashboard.reject}
+                  </button>
+                </div>
+              </article>
+            ))
+          ) : (
+            <p className="empty-note">{copy.dashboard.noRequests}</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LeaderboardPanel({ leaderboard, copy, activeAccountId, setView }) {
+  const compareItems = leaderboard.slice(0, 5).map((item) => ({
+    label: item.account.name.split(" ")[0],
+    value: item.stats.monthTotal,
+  }));
+
+  return (
+    <section className="panel leaderboard-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.leaderboard.eyebrow}</p>
+          <h2>{copy.leaderboard.title}</h2>
+        </div>
+        <UtilityNav activeView="leaderboard" setView={setView} copy={copy} />
+      </div>
+
+      <div className="leaderboard-top">
+        {leaderboard.slice(0, 3).map((item) => (
+          <article
+            key={item.account.id}
+            className={`podium-card${item.account.id === activeAccountId ? " active" : ""}`}
+          >
+            <p className="podium-rank">#{item.rank}</p>
+            <h3>{item.account.name}</h3>
+            <p className="podium-score">{item.stats.monthTotal} {copy.leaderboard.monthlyPoints}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="table-layout">
+        <div className="table-card">
+          <h3 className="subhead">{copy.leaderboard.rankingTable}</h3>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{copy.leaderboard.rank}</th>
+                <th>{copy.leaderboard.name}</th>
+                <th>{copy.leaderboard.day}</th>
+                <th>{copy.leaderboard.week}</th>
+                <th>{copy.leaderboard.month}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboard.length ? (
+                leaderboard.map((item) => (
+                  <tr key={item.account.id} className={item.account.id === activeAccountId ? "active-row" : ""}>
+                    <td>#{item.rank}</td>
+                    <td>{item.account.name}</td>
+                    <td>{item.stats.dayTotal}</td>
+                    <td>{item.stats.weekTotal}</td>
+                    <td>{item.stats.monthTotal}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5">{copy.leaderboard.noUsers}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-head">
+            <h3>{copy.leaderboard.monthCompare}</h3>
+            <p>{copy.leaderboard.topUsers}</p>
+          </div>
+          <HorizontalChart items={compareItems} emptyLabel={copy.chat.noValues} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ChatPanel({
+  activeAccount,
+  language,
+  copy,
+  chatMessages,
+  proposals,
+  chatMessage,
+  setChatMessage,
+  handleSendChat,
+  handleVoteOnProposal,
+  handleProposalReaction,
+  handleDeleteChatMessage,
+}) {
+  const visibleProposals = proposals.filter(
+    (proposal) => !Object.prototype.hasOwnProperty.call(proposal.votes || {}, activeAccount.id),
+  );
+
+  return (
+    <section className="panel chat-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.chat.eyebrow}</p>
+          <h2>{copy.chat.title}</h2>
+        </div>
+      </div>
+
+      <div className="chat-layout">
+        <div className="chat-card">
+          <h3 className="subhead">{copy.chat.chatTitle}</h3>
+          <p className="chat-note">{copy.chat.chatBody}</p>
+          <form className="chat-form" onSubmit={handleSendChat}>
+            <input
+              type="text"
+              value={chatMessage}
+              onChange={(event) => setChatMessage(event.target.value)}
+              placeholder={copy.chat.placeholder(activeAccount.name)}
+              maxLength="200"
+            />
+            <button type="submit" className="primary-button small-button">
+              {copy.chat.send}
+            </button>
+          </form>
+
+          <div className="message-list">
+            {chatMessages.length ? (
+              chatMessages.map((entry) => (
+                <article key={entry.id} className="message-item">
+                  <div className="message-head">
+                    <div className="message-meta">
+                      <strong>{entry.author}</strong>
+                      <span>{formatDateTime(entry.createdAt, language)}</span>
+                    </div>
+                    {entry.accountId === activeAccount.id ? (
+                      <button
+                        type="button"
+                        className="message-delete"
+                        onClick={() => handleDeleteChatMessage(entry.id)}
+                      >
+                        Loeschen
+                      </button>
+                    ) : null}
+                  </div>
+                  <p>{entry.message}</p>
+                </article>
+              ))
+            ) : (
+              <p className="empty-note">{copy.chat.noMessages}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="chat-card">
+          <h3 className="subhead">{copy.chat.proposalTitle}</h3>
+          <p className="chat-note">{copy.chat.proposalBody}</p>
+          <div className="proposal-list">
+            {visibleProposals.length ? (
+              visibleProposals.map((proposal) => {
+                const recommended = getProposalAverage(proposal);
+                const selectedVote = proposal.votes?.[activeAccount.id];
+
+                return (
+                  <article key={proposal.id} className="proposal-card">
+                    <div className="proposal-head">
+                      <div>
+                        <h4>{proposal.title}</h4>
+                        <p>{copy.chat.fromOn(proposal.createdByName, formatDate(proposal.createdAt, language))}</p>
+                      </div>
+                      <div className="proposal-score">
+                        <span>{copy.chat.suggestion}</span>
+                        <strong>{proposal.proposedPoints}</strong>
+                      </div>
+                    </div>
+
+                    <div className="proposal-meta">
+                      <span>{copy.chat.communityValue}: {recommended}</span>
+                      <span>{Object.keys(proposal.votes || {}).length} {copy.chat.votes}</span>
+                    </div>
+
+                    <div className="proposal-actions">
+                      <button
+                        type="button"
+                        className="secondary-button small-button"
+                        onClick={() => handleProposalReaction(proposal, "approve")}
+                      >
+                        {copy.chat.approve}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button small-button"
+                        onClick={() => handleProposalReaction(proposal, "reject")}
+                      >
+                        {copy.chat.reject}
+                      </button>
+                    </div>
+
+                    <div className="vote-row">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={`vote-chip${selectedVote === value ? " active" : ""}`}
+                          onClick={() => handleVoteOnProposal(proposal.id, value)}
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <p className="empty-note">{copy.chat.noProposals}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SettingsPanel({
+  account,
+  copy,
+  handleUpdateProfile,
+  handleChangePassword,
+  handleDeleteAccount,
+}) {
+  return (
+    <section className="panel settings-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.settings.eyebrow}</p>
+          <h2>{copy.settings.title}</h2>
+        </div>
+      </div>
+
+      <div className="settings-grid">
+        <form className="custom-card" onSubmit={handleUpdateProfile}>
+          <h3>{copy.settings.profileTitle}</h3>
+          <label>
+            {copy.auth.fullName}
+            <input name="name" type="text" defaultValue={account.name} maxLength="40" required />
+          </label>
+          <label>
+            {copy.auth.email}
+            <input name="email" type="email" defaultValue={account.email} maxLength="80" required />
+          </label>
+          <label>
+            {copy.auth.city}
+            <input name="city" type="text" defaultValue={account.city} maxLength="40" required />
+          </label>
+          <label>
+            {copy.auth.age}
+            <input name="age" type="number" min="16" max="99" defaultValue={account.age} required />
+          </label>
+          <button type="submit" className="primary-button small-button">
+            {copy.settings.saveProfile}
+          </button>
+        </form>
+
+        <form className="custom-card" onSubmit={handleChangePassword}>
+          <h3>{copy.settings.passwordTitle}</h3>
+          <label>
+            {copy.settings.currentPassword}
+            <input name="currentPassword" type="password" minLength="4" maxLength="40" required />
+          </label>
+          <label>
+            {copy.settings.newPassword}
+            <input name="newPassword" type="password" minLength="4" maxLength="40" required />
+          </label>
+          <label>
+            {copy.settings.confirmPassword}
+            <input name="confirmPassword" type="password" minLength="4" maxLength="40" required />
+          </label>
+          <button type="submit" className="primary-button small-button">
+            {copy.settings.changePassword}
+          </button>
+        </form>
+      </div>
+
+      <div className="table-card danger-card">
+        <h3 className="subhead">{copy.settings.deleteTitle}</h3>
+        <p className="chat-note">{copy.settings.deleteText}</p>
+        <button type="button" className="secondary-button" onClick={handleDeleteAccount}>
+          {copy.settings.deleteButton}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function BarChart({ items }) {
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+  return (
+    <div className="bar-chart">
+      {items.map((item) => (
+        <div key={item.label} className="bar-item">
+          <span className="bar-value">{item.value}</span>
+          <div className="bar-track">
+            <div
+              className="bar-fill"
+              style={{ height: `${Math.max(10, Math.round((item.value / maxValue) * 140))}px` }}
+            />
+          </div>
+          <span className="bar-label">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HorizontalChart({ items, emptyLabel = COPY.de.chat.noValues }) {
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+  return (
+    <div className="horizontal-chart">
+      {items.length ? (
+        items.map((item) => (
+          <div key={item.label} className="h-row">
+            <span className="h-label">{item.label}</span>
+            <div className="h-track">
+              <div
+                className="h-fill"
+                style={{ width: `${Math.max(8, Math.round((item.value / maxValue) * 100))}%` }}
+              />
+            </div>
+            <span className="h-value">{item.value}</span>
+          </div>
+        ))
+      ) : (
+        <p className="empty-note">{emptyLabel}</p>
+      )}
+    </div>
+  );
+}
+
+function UtilityNav({ activeView, setView = () => {}, copy }) {
+  return (
+    <div className="micro-nav">
+      <button
+        type="button"
+        className={`micro-button${activeView === "activity" ? " active" : ""}`}
+        onClick={() => setView("activity")}
+      >
+        {copy.utilityNav.activity}
+      </button>
+      <button
+        type="button"
+        className={`micro-button${activeView === "leaderboard" ? " active" : ""}`}
+        onClick={() => setView("leaderboard")}
+      >
+        {copy.utilityNav.leaderboard}
+      </button>
+      <button
+        type="button"
+        className={`micro-button${activeView === "dashboard" ? " active" : ""}`}
+        onClick={() => setView("dashboard")}
+      >
+        {copy.utilityNav.dashboard}
+      </button>
+    </div>
+  );
+}
+
+function loadState() {
+  if (typeof window === "undefined") {
+    return EMPTY_STATE;
+  }
+
+  const current = parseStorage(STORAGE_KEY);
+  if (current) {
+    return current;
+  }
+
+  for (const legacyKey of LEGACY_STORAGE_KEYS) {
+    const legacy = parseStorage(legacyKey);
+    if (legacy) {
+      return legacy;
+    }
+  }
+
+  return EMPTY_STATE;
+}
+
+function parseStorage(key) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.accounts)) {
+      return null;
+    }
+
+    return {
+      accounts: parsed.accounts.map(normalizeAccount),
+      activeAccountId: parsed.activeAccountId || null,
+      chatMessages: Array.isArray(parsed.chatMessages) ? parsed.chatMessages.map(normalizeChatMessage) : [],
+      customProposals: Array.isArray(parsed.customProposals)
+        ? parsed.customProposals.map(normalizeProposal)
+        : [],
+      activityRequests: Array.isArray(parsed.activityRequests)
+        ? parsed.activityRequests.map(normalizeActivityRequest)
+        : [],
+      approvedActivities: Array.isArray(parsed.approvedActivities)
+        ? parsed.approvedActivities.map(normalizeApprovedActivity)
+        : [],
+    };
+  } catch (error) {
+    console.warn("Konnte gespeicherte Daten nicht lesen.", error);
+    return null;
+  }
+}
+
+function normalizeAccount(account) {
+  const activities = Array.isArray(account.activities)
+    ? account.activities.map(normalizeActivity)
+    : convertLegacyEntries(account.entries);
+
+  return {
+    id: account.id || crypto.randomUUID(),
+    name: account.name || "Unbekannt",
+    email: account.email || `${(account.name || "user").toLowerCase().replace(/\s+/g, ".")}@local.app`,
+    city: account.city || "Unbekannt",
+    age: account.age || "18",
+    password: account.password || "demo1234",
+    createdAt: account.createdAt || new Date().toISOString(),
+    activities,
+  };
+}
+
+function normalizeActivity(activity) {
+  return {
+    id: activity.id || crypto.randomUUID(),
+    category: activity.category || "custom",
+    title: activity.title || "Aktivität",
+    points: Number(activity.points) || 0,
+    note: activity.note || "",
+    createdAt: activity.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeChatMessage(message) {
+  return {
+    id: message.id || crypto.randomUUID(),
+    accountId: message.accountId || "system",
+    author: message.author || "System",
+    message: message.message || "",
+    createdAt: message.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeProposal(proposal) {
+  return {
+    id: proposal.id || crypto.randomUUID(),
+    createdBy: proposal.createdBy || "unknown",
+    createdByName: proposal.createdByName || "Unbekannt",
+    title: proposal.title || "Custom-Aktivität",
+    proposedPoints: Number(proposal.proposedPoints) || 0,
+    createdAt: proposal.createdAt || new Date().toISOString(),
+    votes: proposal.votes && typeof proposal.votes === "object" ? proposal.votes : {},
+  };
+}
+
+function normalizeActivityRequest(request) {
+  return {
+    id: request.id || crypto.randomUUID(),
+    category: request.category || "custom",
+    title: request.title || "Aktivität",
+    proposedPoints: Number(request.proposedPoints) || 0,
+    createdBy: request.createdBy || "unknown",
+    createdByName: request.createdByName || "Unbekannt",
+    createdAt: request.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeApprovedActivity(activity) {
+  return {
+    id: activity.id || crypto.randomUUID(),
+    category: activity.category || "custom",
+    title: activity.title || "Aktivität",
+    points: Number(activity.points) || 0,
+    note: activity.note || "",
+  };
+}
+
+function convertLegacyEntries(entries) {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries.map((entry) => ({
+    id: crypto.randomUUID(),
+    category: "custom",
+    title: "Vorheriger Nachhaltigkeits-Check-in",
+    points: Number(entry.score) || 0,
+    note: "Automatisch aus der alten Version übernommen.",
+    createdAt: `${entry.date || getTodayKey()}T12:00:00.000Z`,
+  }));
+}
+
+function getActiveAccount(appState) {
+  return appState.accounts.find((account) => account.id === appState.activeAccountId) || null;
+}
+
+function getLeaderboardData(accounts) {
+  const ranked = accounts.map((account) => ({
+    account,
+    stats: getAccountStats(account),
+  }));
+
+  ranked.sort((left, right) => {
+    if (right.stats.monthTotal !== left.stats.monthTotal) {
+      return right.stats.monthTotal - left.stats.monthTotal;
+    }
+
+    if (right.stats.weekTotal !== left.stats.weekTotal) {
+      return right.stats.weekTotal - left.stats.weekTotal;
+    }
+
+    return left.account.name.localeCompare(right.account.name);
+  });
+
+  return ranked.map((item, index) => ({
+    ...item,
+    rank: index + 1,
+  }));
+}
+
+function getAccountStats(account, language = "de") {
+  const now = new Date();
+  const activities = [...account.activities].sort((left, right) => {
+    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+  });
+
+  const dayTotal = sumActivities(activities.filter((activity) => isWithinDays(activity.createdAt, 1, now)));
+  const weekTotal = sumActivities(activities.filter((activity) => isWithinDays(activity.createdAt, 7, now)));
+  const monthTotal = sumActivities(activities.filter((activity) => isWithinDays(activity.createdAt, 30, now)));
+
+  return {
+    dayTotal,
+    weekTotal,
+    monthTotal,
+    totalPoints: sumActivities(activities),
+    dailySeries: buildDailySeries(activities, language),
+    weeklySeries: buildWeeklySeries(activities),
+    monthlySeries: buildMonthlySeries(activities, language),
+    categoryRows: buildCategoryRows(activities, language),
+  };
+}
+
+function createEmptyStats(language = "de") {
+  return {
+    dayTotal: 0,
+    weekTotal: 0,
+    monthTotal: 0,
+    totalPoints: 0,
+    dailySeries: buildDailySeries([], language),
+    weeklySeries: buildWeeklySeries([]),
+    monthlySeries: buildMonthlySeries([], language),
+    categoryRows: Object.keys(CATEGORY_LABELS).map((key) => ({ label: getCategoryLabel(key, language), value: 0 })),
+  };
+}
+
+function buildDailySeries(activities, language = "de") {
+  const items = [];
+  const locale = language === "en" ? "en-US" : "de-DE";
+
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = new Date();
+    date.setDate(date.getDate() - offset);
+    const key = toDayKey(date);
+
+    items.push({
+      label: date.toLocaleDateString(locale, { weekday: "short" }),
+      value: sumActivities(activities.filter((activity) => toDayKey(new Date(activity.createdAt)) === key)),
+    });
+  }
+
+  return items;
+}
+
+function buildWeeklySeries(activities) {
+  const items = [];
+  const current = new Date();
+
+  for (let offset = 3; offset >= 0; offset -= 1) {
+    const end = new Date(current);
+    end.setDate(end.getDate() - offset * 7);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+
+    items.push({
+      label: `W${4 - offset}`,
+      value: sumActivities(
+        activities.filter((activity) => {
+          const created = new Date(activity.createdAt).getTime();
+          return created >= start.getTime() && created <= end.getTime();
+        }),
+      ),
+    });
+  }
+
+  return items;
+}
+
+function buildMonthlySeries(activities, language = "de") {
+  const items = [];
+  const now = new Date();
+  const locale = language === "en" ? "en-US" : "de-DE";
+
+  for (let offset = 5; offset >= 0; offset -= 1) {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    const label = monthDate.toLocaleDateString(locale, { month: "short" });
+    const month = monthDate.getMonth();
+    const year = monthDate.getFullYear();
+
+    items.push({
+      label,
+      value: sumActivities(
+        activities.filter((activity) => {
+          const created = new Date(activity.createdAt);
+          return created.getMonth() === month && created.getFullYear() === year;
+        }),
+      ),
+    });
+  }
+
+  return items;
+}
+
+function buildCategoryRows(activities, language = "de") {
+  return Object.entries(CATEGORY_LABELS).map(([key, label]) => ({
+    label: label[language],
+    value: sumActivities(activities.filter((activity) => activity.category === key)),
+  }));
+}
+
+function sumActivities(activities) {
+  return activities.reduce((sum, activity) => sum + (Number(activity.points) || 0), 0);
+}
+
+function isWithinDays(dateString, days, now) {
+  const created = new Date(dateString).getTime();
+  const diff = now.getTime() - created;
+  return diff <= days * 24 * 60 * 60 * 1000;
+}
+
+function toDayKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function getTodayKey() {
+  return toDayKey(new Date());
+}
+
+function formatDate(dateString, language = "de") {
+  return new Date(dateString).toLocaleDateString(language === "en" ? "en-US" : "de-DE");
+}
+
+function formatDateTime(dateString, language = "de") {
+  return new Date(dateString).toLocaleString(language === "en" ? "en-US" : "de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getProposalAverage(proposal) {
+  const values = Object.values(proposal.votes || {}).map((value) => Number(value)).filter(Boolean);
+  if (!values.length) {
+    return proposal.proposedPoints;
+  }
+
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
+
+function getLevelStats(totalPoints) {
+  const pointsPerLevel = 100;
+  const level = Math.floor(totalPoints / pointsPerLevel) + 1;
+  const nextThreshold = level * pointsPerLevel;
+  const progressInLevel = totalPoints % pointsPerLevel;
+  const progressPercent = Math.max(
+    0,
+    Math.min(100, Math.round((progressInLevel / pointsPerLevel) * 100)),
+  );
+
+  return {
+    level,
+    nextThreshold,
+    progressPercent,
+    pointsToNext: nextThreshold - totalPoints,
+    currentLabel: getLevelName(level),
+    nextLabel: getLevelName(level + 1),
+  };
+}
+
+function getLevelName(level) {
+  if (level <= LEVEL_NAMES.length) {
+    return LEVEL_NAMES[level - 1];
+  }
+
+  return `Elite ${level}`;
+}
+
+function getCategoryLabel(category, language = "de") {
+  return CATEGORY_LABELS[category]?.[language] || CATEGORY_LABELS.custom[language];
+}
+
+function getTreeGrowth(levelStats, copy) {
+  const level = levelStats.level;
+  const progress = levelStats.progressPercent;
+  const rootProgress = level === 1 ? Math.max(0.25, progress / 100) : 1;
+  const trunkProgress = level === 1 ? 0.18 : level === 2 ? Math.max(0.2, progress / 100) : 1;
+  const canopyTier = Math.max(0, level - 2);
+  const canopyFront = canopyTier >= 1 ? 1 : 0;
+  const canopyMid = canopyTier >= 2 ? 1 : canopyTier === 1 ? Math.max(0.35, progress / 100) : 0;
+  const canopyBack = canopyTier >= 3 ? 1 : canopyTier === 2 ? Math.max(0.35, progress / 100) : 0;
+  const branchVisible = level >= 3 ? 1 : level === 2 ? Math.max(0.25, progress / 100) : 0;
+
+  let stageLabel = "";
+  if (level === 1) {
+    stageLabel = copy.activity.treeStageRoots(progress);
+  } else if (level === 2) {
+    stageLabel = copy.activity.treeStageTrunk(progress);
+  } else {
+    stageLabel = copy.activity.treeStageCrown(level);
+  }
+
+  return {
+    rootStyle: {
+      opacity: rootProgress,
+      transform: `scaleX(${0.55 + rootProgress * 0.45})`,
+    },
+    trunkStyle: {
+      height: `${36 + trunkProgress * 72}px`,
+    },
+    branchStyle: {
+      opacity: branchVisible,
+      transform: `scale(${0.7 + branchVisible * 0.3})`,
+    },
+    canopyFrontStyle: {
+      opacity: canopyFront,
+      transform: `scale(${0.65 + canopyFront * 0.35})`,
+    },
+    canopyMidStyle: {
+      opacity: canopyMid,
+      transform: `scale(${0.55 + canopyMid * 0.45})`,
+    },
+    canopyBackStyle: {
+      opacity: canopyBack,
+      transform: `scale(${0.45 + canopyBack * 0.55})`,
+    },
+    stageLabel,
+  };
+}
