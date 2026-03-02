@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "ecoboard-data-v5";
+const STORAGE_KEY = "ecoboard-data-v7";
 const LANGUAGE_KEY = "ecoboard-language-v1";
 const DEVELOPER_EMAIL = "davidammann@web.de";
 const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
-const LEGACY_STORAGE_KEYS = ["ecoboard-data-v3", "ecoboard-data-v2", "earthmeter-data-v1"];
+const LEGACY_STORAGE_KEYS = [];
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const IS_DEV_BUILD = process.env.NODE_ENV !== "production";
 const TEST_USER_ID = "demo-power-user";
 
 const LEVEL_NAMES = [
@@ -98,6 +99,8 @@ const COPY = {
       continue: "Weiter zur App",
       signIn: "Einloggen",
       forgotPassword: "Passwort vergessen",
+      observerAccess: "Beobachterzugang",
+      observerLabel: "Admin Ansicht",
       resetTitle: "Passwort vergessen",
       resetText:
         "Wenn du dein Passwort vergessen hast, kannst du es mit E-Mail, Stadt und Alter lokal zurücksetzen.",
@@ -332,6 +335,8 @@ const COPY = {
       continue: "Continue to App",
       signIn: "Sign In",
       forgotPassword: "Forgot password",
+      observerAccess: "Observer Access",
+      observerLabel: "Admin View",
       resetTitle: "Forgot Password",
       resetText:
         "If you forgot your password, you can reset it locally using your email, city, and age.",
@@ -696,6 +701,7 @@ export default function Page() {
   const [language, setLanguage] = useState("de");
   const [status, setStatus] = useState(COPY.de.status.loginFirst);
   const [authMode, setAuthMode] = useState("register");
+  const [observerMode, setObserverMode] = useState(false);
   const [view, setView] = useState("sustainability");
   const [selectedCategory, setSelectedCategory] = useState("mobility");
   const [feedbackCategory, setFeedbackCategory] = useState("general");
@@ -745,8 +751,9 @@ export default function Page() {
   }, [language]);
 
   const activeAccount = getActiveAccount(appState);
+  const sessionAccount = activeAccount || (observerMode ? createObserverAccount(copy) : null);
   const leaderboard = getLeaderboardData(appState.accounts);
-  const activeStats = activeAccount ? getAccountStats(activeAccount, language) : createEmptyStats(language);
+  const activeStats = sessionAccount ? getAccountStats(sessionAccount, language) : createEmptyStats(language);
   const activeRank = activeAccount
     ? leaderboard.find((item) => item.account.id === activeAccount.id)?.rank || "-"
     : "-";
@@ -871,8 +878,15 @@ export default function Page() {
       activeAccountId: null,
     }));
 
+    setObserverMode(false);
     setView("sustainability");
     setStatus(copy.status.loggedOut);
+  }
+
+  function handleObserverAccess() {
+    setObserverMode(true);
+    setView("dashboard");
+    setStatus(copy.status.signedIn);
   }
 
   function handleUpdateProfile(event) {
@@ -1380,12 +1394,14 @@ export default function Page() {
     setStatus(copy.status.proposalRejected(proposal.title));
   }
 
-  if (!activeAccount) {
+  if (!sessionAccount) {
     return (
       <div className="auth-shell">
         <section className="auth-stage">
           <div className="auth-copy">
-            <p className="eyebrow">EcoTrack</p>
+            <p className="eyebrow" onDoubleClick={handleObserverAccess}>
+              EcoTrack
+            </p>
             <h1>{copy.auth.title}</h1>
             <p className="auth-text">{copy.auth.text}</p>
             <div className="language-block">
@@ -1559,7 +1575,7 @@ export default function Page() {
 
         <div className="header-right">
           <div className="login-state">
-            {copy.loggedInAs}<strong className="login-name">{activeAccount.name}</strong>
+            {copy.loggedInAs}<strong className="login-name">{sessionAccount.name}</strong>
           </div>
           <button type="button" className="secondary-button" onClick={handleLogout}>
             {copy.logout}
@@ -1622,7 +1638,7 @@ export default function Page() {
 
         {view === "activity" && (
           <ActivityPanel
-            activeAccount={activeAccount}
+            activeAccount={sessionAccount}
             stats={activeStats}
             levelStats={levelStats}
             language={language}
@@ -1647,7 +1663,7 @@ export default function Page() {
 
         {view === "dashboard" && (
           <DashboardPanel
-            account={activeAccount}
+            account={sessionAccount}
             stats={activeStats}
             copy={copy}
             language={language}
@@ -1670,7 +1686,7 @@ export default function Page() {
 
         {view === "chat" && (
           <ChatPanel
-            activeAccount={activeAccount}
+            activeAccount={sessionAccount}
             language={language}
             copy={copy}
             chatMessages={appState.chatMessages || []}
@@ -1693,7 +1709,7 @@ export default function Page() {
 
         {view === "settings" && (
           <SettingsPanel
-            account={activeAccount}
+            account={sessionAccount}
             copy={copy}
             language={language}
             setLanguage={setLanguage}
@@ -1706,7 +1722,7 @@ export default function Page() {
 
         {view === "feedback" && (
           <FeedbackPanel
-            account={activeAccount}
+            account={sessionAccount}
             copy={copy}
             language={language}
             feedbackCategory={feedbackCategory}
@@ -2817,22 +2833,22 @@ function UtilityNav({ activeView, setView = () => {}, copy }) {
 
 function loadState() {
   if (typeof window === "undefined") {
-    return ensureSeedData(EMPTY_STATE);
+    return EMPTY_STATE;
   }
 
   const current = parseStorage(STORAGE_KEY);
   if (current) {
-    return ensureSeedData(current);
+    return IS_DEV_BUILD ? ensureSeedData(current) : current;
   }
 
   for (const legacyKey of LEGACY_STORAGE_KEYS) {
     const legacy = parseStorage(legacyKey);
     if (legacy) {
-      return ensureSeedData(legacy);
+      return IS_DEV_BUILD ? ensureSeedData(legacy) : legacy;
     }
   }
 
-  return ensureSeedData(EMPTY_STATE);
+  return IS_DEV_BUILD ? ensureSeedData(EMPTY_STATE) : EMPTY_STATE;
 }
 
 function parseStorage(key) {
@@ -2956,6 +2972,19 @@ function convertLegacyEntries(entries) {
 
 function getActiveAccount(appState) {
   return appState.accounts.find((account) => account.id === appState.activeAccountId) || null;
+}
+
+function createObserverAccount(copy) {
+  return {
+    id: "observer-view",
+    name: copy.auth.observerLabel,
+    email: "",
+    city: "",
+    age: "",
+    password: "",
+    createdAt: new Date().toISOString(),
+    activities: [],
+  };
 }
 
 function getLeaderboardData(accounts) {
