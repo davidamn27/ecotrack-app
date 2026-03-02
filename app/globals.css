@@ -34,7 +34,9 @@ body {
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
 }
 
@@ -165,6 +167,21 @@ h3 {
   flex-wrap: wrap;
 }
 
+.top-nav {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.top-nav-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.top-nav-group-right {
+  justify-content: flex-end;
+}
+
 .auth-pill-row {
   margin-top: 1.25rem;
 }
@@ -174,12 +191,16 @@ h3 {
 .micro-button,
 .category-button,
 .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(18, 32, 25, 0.1);
   background: rgba(255, 255, 255, 0.7);
   color: var(--ink);
   border-radius: 999px;
   padding: 0.8rem 1rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .pill-button.active,
@@ -189,6 +210,31 @@ h3 {
   color: #f7f4ed;
   background: linear-gradient(135deg, var(--primary), var(--primary-strong));
   border-color: transparent;
+}
+
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 1.1rem;
+}
+
+.button-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.button-label {
+  line-height: 1;
 }
 
 .stack {
@@ -218,7 +264,9 @@ label {
   margin: 0;
 }
 
-input {
+input,
+textarea,
+select {
   width: 100%;
   padding: 0.9rem 1rem;
   border-radius: 14px;
@@ -227,7 +275,14 @@ input {
   color: var(--ink);
 }
 
-input:focus {
+textarea {
+  resize: vertical;
+  min-height: 9rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
   outline: 2px solid rgba(29, 107, 71, 0.18);
   border-color: rgba(29, 107, 71, 0.34);
 }
@@ -268,7 +323,7 @@ input:focus {
 
 .app-header {
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  align-items: start;
   margin-bottom: 1rem;
 }
 
@@ -276,6 +331,7 @@ input:focus {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  justify-self: end;
 }
 
 .dashboard-head-actions {
@@ -286,7 +342,10 @@ input:focus {
 
 .login-state,
 .summary-chip {
+  display: inline-flex;
+  align-items: center;
   padding: 0.75rem 0.95rem;
+  min-height: 3.35rem;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.72);
@@ -299,6 +358,11 @@ input:focus {
 
 .nav-button {
   padding-inline: 1.15rem;
+  min-height: 4rem;
+}
+
+.header-right .secondary-button {
+  min-height: 3.35rem;
 }
 
 .content-stack {
@@ -414,7 +478,7 @@ input:focus {
   border-radius: 18px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.9), rgba(232, 243, 222, 0.7) 38%, rgba(212, 227, 213, 0.55) 100%);
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.95), rgba(232, 243, 222, 0.78) 34%, rgba(212, 227, 213, 0.62) 100%);
 }
 
 .tree-ground {
@@ -422,16 +486,18 @@ input:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 58px;
-  background: linear-gradient(180deg, rgba(182, 130, 77, 0.32), rgba(122, 82, 46, 0.68));
+  height: 62px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(195, 145, 92, 0.45), transparent 48%),
+    linear-gradient(180deg, rgba(182, 130, 77, 0.28), rgba(122, 82, 46, 0.76));
 }
 
 .tree-roots {
   position: absolute;
   left: 50%;
-  bottom: 42px;
-  width: 110px;
-  height: 44px;
+  bottom: 40px;
+  width: 134px;
+  height: 56px;
   transform-origin: center bottom;
   translate: -50% 0;
   transition: opacity 220ms ease, transform 220ms ease;
@@ -439,99 +505,112 @@ input:focus {
 
 .tree-roots span {
   position: absolute;
-  bottom: 0;
-  width: 46px;
-  height: 26px;
-  border-bottom: 4px solid #7a4b2b;
-  border-radius: 0 0 22px 22px;
+  bottom: 8px;
+  width: 54px;
+  height: 30px;
+  border-bottom: 5px solid #7a4b2b;
+  border-radius: 0 0 24px 24px;
 }
 
 .tree-roots span:nth-child(1) {
-  left: 6px;
-  rotate: 14deg;
+  left: 2px;
+  rotate: 18deg;
 }
 
 .tree-roots span:nth-child(2) {
-  left: 32px;
-  width: 42px;
+  left: 40px;
+  width: 48px;
 }
 
 .tree-roots span:nth-child(3) {
-  right: 6px;
-  rotate: -14deg;
+  right: 2px;
+  rotate: -18deg;
 }
 
 .tree-trunk {
   position: absolute;
   left: 50%;
   bottom: 54px;
-  width: 22px;
-  min-height: 36px;
-  border-radius: 14px 14px 6px 6px;
+  width: 28px;
+  min-height: 44px;
+  border-radius: 16px 16px 8px 8px;
   background: linear-gradient(180deg, #9b6337, #7a4b2b);
   transform: translateX(-50%);
   transform-origin: center bottom;
   transition: height 220ms ease;
+  box-shadow: inset 2px 0 0 rgba(255, 238, 214, 0.16), inset -2px 0 0 rgba(89, 54, 28, 0.22);
+}
+
+.tree-trunk::before {
+  content: "";
+  position: absolute;
+  inset: 18px 9px 10px;
+  border-radius: 999px;
+  background: rgba(255, 242, 228, 0.12);
 }
 
 .tree-branches {
   position: absolute;
   left: 50%;
-  top: 20px;
-  width: 86px;
-  height: 34px;
+  top: 12px;
+  width: 118px;
+  height: 56px;
   transform: translateX(-50%);
   transform-origin: center;
   transition: opacity 220ms ease, transform 220ms ease;
+  filter: drop-shadow(0 2px 1px rgba(88, 52, 28, 0.08));
 }
 
 .tree-branches::before,
 .tree-branches::after {
   content: "";
   position: absolute;
-  top: 12px;
-  width: 34px;
-  height: 4px;
+  top: 16px;
+  width: 42px;
+  height: 5px;
   border-radius: 999px;
   background: #8a5530;
 }
 
 .tree-branches::before {
   left: 8px;
-  rotate: -24deg;
+  rotate: -28deg;
 }
 
 .tree-branches::after {
   right: 8px;
-  rotate: 24deg;
+  rotate: 28deg;
 }
 
 .tree-canopy {
   position: absolute;
   left: 50%;
-  border-radius: 999px;
+  border-radius: 55% 45% 48% 52% / 54% 49% 51% 46%;
   background: radial-gradient(circle at 35% 30%, #eff9e7, #8bc872 58%, #3e8f56);
   transform: translateX(-50%);
   transform-origin: center bottom;
   transition: opacity 220ms ease, transform 220ms ease;
+  box-shadow:
+    inset -10px -14px 18px rgba(34, 94, 54, 0.2),
+    inset 8px 10px 16px rgba(246, 252, 239, 0.35);
 }
 
 .canopy-front {
-  bottom: 112px;
-  width: 94px;
-  height: 78px;
+  bottom: 110px;
+  width: 98px;
+  height: 86px;
 }
 
 .canopy-mid {
-  bottom: 130px;
-  width: 122px;
-  height: 88px;
+  bottom: 136px;
+  width: 132px;
+  height: 98px;
 }
 
 .canopy-back {
-  bottom: 148px;
-  width: 142px;
-  height: 94px;
+  bottom: 156px;
+  width: 154px;
+  height: 108px;
 }
 
 .subhead {
@@ -793,6 +872,34 @@ button:disabled {
   margin-bottom: 1rem;
 }
 
+.settings-stack-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-language-block {
+  margin: 0;
+}
+
+.feedback-card {
+  max-width: 760px;
+}
+
+.inline-category-row {
+  margin: 0;
+}
+
+.survey-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.survey-link {
+  margin: 0;
+  word-break: break-word;
+  color: var(--muted);
+}
+
 .danger-card {
   border-color: rgba(215, 66, 66, 0.14);
   background: linear-gradient(145deg, rgba(255, 241, 241, 0.92), rgba(255, 255, 255, 0.82));
@@ -927,6 +1034,28 @@ button:disabled {
   padding: 1.1rem;
 }
 
+.chat-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.proposal-create-card {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.proposal-create-card h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.proposal-create-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.55fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
 .chat-note,
 .message-item p,
 .proposal-head p,
@@ -939,7 +1068,7 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
-  margin: 1rem 0;
+  margin-top: 1rem;
 }
 
 .message-list,
@@ -949,7 +1078,15 @@ button:disabled {
 }
 
 .message-item {
-  padding: 0.9rem 1rem;
+  padding: 0.4rem 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  justify-items: start;
+}
+
+.message-item.own-message {
+  justify-items: end;
 }
 
 .message-meta {
@@ -966,14 +1103,35 @@ button:disabled {
   align-items: baseline;
 }
 
-.message-item p {
-  margin-top: 0.45rem;
-}
-
 .message-head span,
 .proposal-head p,
 .proposal-meta {
   font-size: 0.82rem;
+}
+
+.message-head {
+  width: min(100%, 34rem);
+}
+
+.message-bubble {
+  width: min(100%, 34rem);
+  margin: 0.45rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 18px 18px 18px 6px;
+  border: 1px solid rgba(18, 32, 25, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 20px rgba(18, 32, 25, 0.05);
+}
+
+.own-message .message-bubble {
+  border-radius: 18px 18px 6px 18px;
+  background: linear-gradient(135deg, rgba(232, 243, 222, 0.95), rgba(216, 238, 218, 0.92));
+}
+
+.message-list {
+  max-height: 32rem;
+  overflow: auto;
+  padding-right: 0.25rem;
 }
 
 .message-delete {
@@ -1064,6 +1222,7 @@ button:disabled {
   .level-layout,
   .info-grid,
   .settings-grid,
+  .proposal-create-grid,
   .suggestion-grid,
   .analytics-grid,
   .chat-layout,
@@ -1086,6 +1245,11 @@ button:disabled {
   .header-right,
   .dashboard-head-actions,
   .micro-nav {
+    justify-content: flex-start;
+  }
+
+  .top-nav,
+  .top-nav-group-right {
     justify-content: flex-start;
   }
 

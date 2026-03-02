@@ -2,13 +2,41 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "ecoboard-data-v4";
+const STORAGE_KEY = "ecoboard-data-v5";
 const LANGUAGE_KEY = "ecoboard-language-v1";
 const DEVELOPER_EMAIL = "davidammann@web.de";
+const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
 const LEGACY_STORAGE_KEYS = ["ecoboard-data-v3", "ecoboard-data-v2", "earthmeter-data-v1"];
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const TEST_USER_ID = "demo-power-user";
 
-const LEVEL_NAMES = ["Starter", "Scout", "Mover", "Impact", "Leader", "Visionary"];
+const LEVEL_NAMES = [
+  "Starter",
+  "Scout",
+  "Mover",
+  "Impact",
+  "Leader",
+  "Visionary",
+  "Trailblazer",
+  "Guardian",
+  "Pioneer",
+  "Catalyst",
+  "Explorer",
+  "Mentor",
+  "Architect",
+  "Steward",
+  "Champion",
+  "Shaper",
+  "Navigator",
+  "Innovator",
+  "Beacon",
+  "Summit",
+  "Legacy",
+  "Momentum",
+  "Horizon",
+  "Evergreen",
+  "Earthkeeper",
+];
 
 function withBasePath(path) {
   return `${BASE_PATH}${path}`;
@@ -19,6 +47,27 @@ const CATEGORY_LABELS = {
   nutrition: { de: "Ernährung", en: "Nutrition" },
   household: { de: "Haushalt", en: "Household" },
   custom: { de: "Individuell", en: "Custom" },
+};
+
+const FEEDBACK_CATEGORY_LABELS = {
+  general: { de: "Allgemein", en: "General" },
+  ...CATEGORY_LABELS,
+};
+
+const VIEW_ICONS = {
+  sustainability: "leaf",
+  activity: "spark",
+  chat: "chat",
+  settings: "settings",
+  feedback: "feedback",
+  survey: "survey",
+};
+
+const CATEGORY_ICONS = {
+  mobility: "mobility",
+  nutrition: "nutrition",
+  household: "household",
+  custom: "custom",
 };
 
 const COPY = {
@@ -48,6 +97,11 @@ const COPY = {
       showPassword: "Passwort anzeigen",
       continue: "Weiter zur App",
       signIn: "Einloggen",
+      forgotPassword: "Passwort vergessen",
+      resetTitle: "Passwort vergessen",
+      resetText:
+        "Wenn du dein Passwort vergessen hast, kannst du es mit E-Mail, Stadt und Alter lokal zurücksetzen.",
+      resetButton: "Passwort zurücksetzen",
     },
     headerTitle: "Dein nachhaltiges Verhalten im Blick",
     loggedInAs: "Eingeloggt als",
@@ -160,9 +214,31 @@ const COPY = {
       newPassword: "Neues Passwort",
       confirmPassword: "Neues Passwort bestätigen",
       changePassword: "Passwort aktualisieren",
+      resetPasswordTitle: "Passwort zurücksetzen",
+      resetPasswordButton: "Ohne aktuelles Passwort zurücksetzen",
       deleteTitle: "Account löschen",
       deleteText: "Der Account und die dazugehörigen persönlichen Daten werden lokal aus dieser App entfernt.",
       deleteButton: "Account endgültig löschen",
+    },
+    feedback: {
+      navLabel: "Vorschläge",
+      eyebrow: "Feedback",
+      title: "Verbesserungsvorschläge zur Web-App",
+      userLabel: "User-Name",
+      categoryLabel: "Bereich",
+      generalArea: "Allgemeine Verbesserungsvorschläge",
+      suggestionLabel: "Verbesserungsvorschlag",
+      suggestionPlaceholder: "Was sollten wir an EcoTrack verbessern?",
+      submit: "An Entwickler senden",
+    },
+    survey: {
+      navLabel: "Umfrage",
+      eyebrow: "Bewertung",
+      title: "Website bewerten",
+      text:
+        "Hier können Nutzer direkt an eurer Microsoft-Forms-Umfrage teilnehmen und die Web-App bewerten.",
+      button: "Umfrage öffnen",
+      linkLabel: "Microsoft Forms",
     },
     chat: {
       eyebrow: "Community",
@@ -175,6 +251,12 @@ const COPY = {
       proposalTitle: "Custom-Aktivitäten bewerten",
       proposalBody:
         "Community-Mitglieder können abstimmen, wie viele Punkte eine manuell eingetragene Aktivität bekommen sollte.",
+      createTitle: "Neue Abstimmung anlegen",
+      createLabel: "Aktivität",
+      createPlaceholder: "Zum Beispiel Bio-Produkte gegessen",
+      createPoints: "Punkte",
+      createCategory: "Kategorie",
+      createButton: "Abstimmung starten",
       approve: "Zustimmen",
       reject: "Ablehnen",
       fromOn: (name, date) => `von ${name} am ${date}`,
@@ -217,7 +299,10 @@ const COPY = {
       passwordTooShort: "Das neue Passwort muss mindestens 4 Zeichen haben.",
       passwordMismatch: "Die neuen Passwörter stimmen nicht überein.",
       passwordChanged: "Dein Passwort wurde aktualisiert.",
+      passwordReset: "Dein Passwort wurde zurückgesetzt.",
+      resetDataMismatch: "Die Angaben passen zu keinem Konto.",
       accountDeleted: "Dein Account wurde gelöscht.",
+      feedbackSent: "Dein Verbesserungsvorschlag wurde an den Entwickler gesendet.",
     },
   },
   en: {
@@ -246,6 +331,11 @@ const COPY = {
       showPassword: "Show password",
       continue: "Continue to App",
       signIn: "Sign In",
+      forgotPassword: "Forgot password",
+      resetTitle: "Forgot Password",
+      resetText:
+        "If you forgot your password, you can reset it locally using your email, city, and age.",
+      resetButton: "Reset Password",
     },
     headerTitle: "Track your sustainable habits at a glance",
     loggedInAs: "Signed in as",
@@ -358,9 +448,31 @@ const COPY = {
       newPassword: "New Password",
       confirmPassword: "Confirm New Password",
       changePassword: "Update Password",
+      resetPasswordTitle: "Reset Password",
+      resetPasswordButton: "Reset Without Current Password",
       deleteTitle: "Delete Account",
       deleteText: "This will remove the account and its personal data locally from this app.",
       deleteButton: "Delete Account Permanently",
+    },
+    feedback: {
+      navLabel: "Suggestions",
+      eyebrow: "Feedback",
+      title: "Suggestions for the Web App",
+      userLabel: "User Name",
+      categoryLabel: "Area",
+      generalArea: "General Improvements",
+      suggestionLabel: "Suggestion",
+      suggestionPlaceholder: "What should we improve in EcoTrack?",
+      submit: "Send to Developer",
+    },
+    survey: {
+      navLabel: "Survey",
+      eyebrow: "Rating",
+      title: "Rate the Website",
+      text:
+        "Users can open your Microsoft Forms survey here directly and rate the web app.",
+      button: "Open Survey",
+      linkLabel: "Microsoft Forms",
     },
     chat: {
       eyebrow: "Community",
@@ -373,6 +485,12 @@ const COPY = {
       proposalTitle: "Rate Custom Activities",
       proposalBody:
         "Community members can vote on how many points a manually entered activity should receive.",
+      createTitle: "Create New Vote",
+      createLabel: "Activity",
+      createPlaceholder: "For example ate organic products",
+      createPoints: "Points",
+      createCategory: "Category",
+      createButton: "Start Vote",
       approve: "Approve",
       reject: "Reject",
       fromOn: (name, date) => `by ${name} on ${date}`,
@@ -415,7 +533,10 @@ const COPY = {
       passwordTooShort: "The new password must be at least 4 characters long.",
       passwordMismatch: "The new passwords do not match.",
       passwordChanged: "Your password was updated.",
+      passwordReset: "Your password was reset.",
+      resetDataMismatch: "The provided details do not match any account.",
       accountDeleted: "Your account was deleted.",
+      feedbackSent: "Your suggestion was sent to the developer.",
     },
   },
 };
@@ -467,6 +588,108 @@ const EMPTY_STATE = {
   approvedActivities: [],
 };
 
+function createDemoTimestamp(daysAgo = 0, hour = 12) {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(hour, 0, 0, 0);
+  return date.toISOString();
+}
+
+function createSeedState() {
+  const demoActivities = [
+    { id: "demo-act-1", category: "mobility", title: "Mit dem Fahrrad zur Uni", points: 84, note: "Testeintrag", createdAt: createDemoTimestamp(0, 8) },
+    { id: "demo-act-2", category: "nutrition", title: "Vegane Woche durchgezogen", points: 96, note: "Testeintrag", createdAt: createDemoTimestamp(1, 12) },
+    { id: "demo-act-3", category: "household", title: "Energieverbrauch bewusst gesenkt", points: 112, note: "Testeintrag", createdAt: createDemoTimestamp(2, 19) },
+    { id: "demo-act-4", category: "custom", title: "Repair-Cafe organisiert", points: 103, note: "Testeintrag", createdAt: createDemoTimestamp(3, 14) },
+    { id: "demo-act-5", category: "mobility", title: "Komplette Woche ohne Auto", points: 127, note: "Testeintrag", createdAt: createDemoTimestamp(4, 9) },
+    { id: "demo-act-6", category: "nutrition", title: "Foodsharing-Aktion umgesetzt", points: 118, note: "Testeintrag", createdAt: createDemoTimestamp(5, 18) },
+    { id: "demo-act-7", category: "household", title: "Wasserspar-Challenge", points: 92, note: "Testeintrag", createdAt: createDemoTimestamp(6, 7) },
+    { id: "demo-act-8", category: "custom", title: "Nachhaltigkeits-Workshop gegeben", points: 136, note: "Testeintrag", createdAt: createDemoTimestamp(8, 16) },
+    { id: "demo-act-9", category: "mobility", title: "Fahrradpendeln im ganzen Monat", points: 158, note: "Testeintrag", createdAt: createDemoTimestamp(10, 8) },
+    { id: "demo-act-10", category: "nutrition", title: "Regionale Einkaufschallenge", points: 149, note: "Testeintrag", createdAt: createDemoTimestamp(12, 11) },
+    { id: "demo-act-11", category: "household", title: "Heizkosten optimiert", points: 164, note: "Testeintrag", createdAt: createDemoTimestamp(15, 20) },
+    { id: "demo-act-12", category: "custom", title: "Campus-Tauschbörse gestartet", points: 177, note: "Testeintrag", createdAt: createDemoTimestamp(18, 13) },
+    { id: "demo-act-13", category: "mobility", title: "Mitfahrnetzwerk aufgebaut", points: 201, note: "Testeintrag", createdAt: createDemoTimestamp(22, 9) },
+    { id: "demo-act-14", category: "nutrition", title: "Kochabend mit geretteten Lebensmitteln", points: 173, note: "Testeintrag", createdAt: createDemoTimestamp(25, 18) },
+    { id: "demo-act-15", category: "household", title: "DIY-Upcycling-Projekt umgesetzt", points: 97, note: "Testeintrag", createdAt: createDemoTimestamp(28, 15) },
+  ];
+
+  return {
+    accounts: [
+      {
+        id: TEST_USER_ID,
+        name: "Eco Demo",
+        email: "demo@ecotrack.app",
+        city: "Berlin",
+        age: "24",
+        password: "demo1234",
+        createdAt: createDemoTimestamp(40, 10),
+        activities: demoActivities,
+      },
+    ],
+    activeAccountId: TEST_USER_ID,
+    chatMessages: [
+      {
+        id: "demo-chat-1",
+        accountId: TEST_USER_ID,
+        author: "Eco Demo",
+        message: "Ich teste gerade Chat, Level-System und Sammelliste. Alles laeuft bis hierhin sauber.",
+        createdAt: createDemoTimestamp(0, 13),
+      },
+    ],
+    customProposals: [
+      {
+        id: "demo-proposal-1",
+        createdBy: TEST_USER_ID,
+        createdByName: "Eco Demo",
+        title: "Regenwasser fuer Pflanzen genutzt",
+        proposedPoints: 7,
+        createdAt: createDemoTimestamp(1, 17),
+        votes: {},
+      },
+    ],
+    activityRequests: [
+      {
+        id: "demo-request-1",
+        category: "custom",
+        title: "Solarladegeraet im Alltag genutzt",
+        proposedPoints: 8,
+        createdBy: TEST_USER_ID,
+        createdByName: "Eco Demo",
+        createdAt: createDemoTimestamp(0, 14),
+      },
+    ],
+    approvedActivities: [
+      {
+        id: "demo-approved-1",
+        category: "custom",
+        title: "Mehrwegbecher im Alltag genutzt",
+        points: 3,
+        note: "Vom Entwickler freigegeben.",
+      },
+    ],
+  };
+}
+
+function ensureSeedData(state) {
+  const seed = createSeedState();
+  const hasTestUser = state.accounts.some((account) => account.id === TEST_USER_ID);
+
+  if (hasTestUser) {
+    return state;
+  }
+
+  return {
+    ...state,
+    accounts: [...state.accounts, ...seed.accounts],
+    activeAccountId: state.activeAccountId || (state.accounts.length ? state.activeAccountId : seed.activeAccountId),
+    chatMessages: [...seed.chatMessages, ...(state.chatMessages || [])],
+    customProposals: [...seed.customProposals, ...(state.customProposals || [])],
+    activityRequests: [...seed.activityRequests, ...(state.activityRequests || [])],
+    approvedActivities: [...seed.approvedActivities, ...(state.approvedActivities || [])],
+  };
+}
+
 export default function Page() {
   const [appState, setAppState] = useState(EMPTY_STATE);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -475,8 +698,12 @@ export default function Page() {
   const [authMode, setAuthMode] = useState("register");
   const [view, setView] = useState("sustainability");
   const [selectedCategory, setSelectedCategory] = useState("mobility");
+  const [feedbackCategory, setFeedbackCategory] = useState("general");
   const [requestTitle, setRequestTitle] = useState("");
   const [requestPoints, setRequestPoints] = useState("");
+  const [proposalTitle, setProposalTitle] = useState("");
+  const [proposalPoints, setProposalPoints] = useState("");
+  const [proposalCategory, setProposalCategory] = useState("mobility");
   const [chatMessage, setChatMessage] = useState("");
   const [pendingActivities, setPendingActivities] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
@@ -604,6 +831,40 @@ export default function Page() {
     setStatus(copy.status.welcomeBack(account.name));
   }
 
+  function handleForgotPassword(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    const city = String(formData.get("city") || "").trim();
+    const age = String(formData.get("age") || "").trim();
+    const nextPassword = String(formData.get("newPassword") || "").trim();
+
+    const account = appState.accounts.find(
+      (item) => item.email === email && item.city === city && String(item.age) === age,
+    );
+
+    if (!account) {
+      setStatus(copy.status.resetDataMismatch);
+      return;
+    }
+
+    if (nextPassword.length < 4) {
+      setStatus(copy.status.passwordTooShort);
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.map((item) =>
+        item.id === account.id ? { ...item, password: nextPassword } : item,
+      ),
+    }));
+
+    event.currentTarget.reset();
+    setAuthMode("login");
+    setStatus(copy.status.passwordReset);
+  }
+
   function handleLogout() {
     updateAppState((current) => ({
       ...current,
@@ -689,6 +950,37 @@ export default function Page() {
 
     event.currentTarget.reset();
     setStatus(copy.status.passwordChanged);
+  }
+
+  function handleResetPassword(event) {
+    event.preventDefault();
+    if (!activeAccount) {
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const nextPassword = String(formData.get("resetPassword") || "").trim();
+    const confirmPassword = String(formData.get("resetConfirmPassword") || "").trim();
+
+    if (nextPassword.length < 4) {
+      setStatus(copy.status.passwordTooShort);
+      return;
+    }
+
+    if (nextPassword !== confirmPassword) {
+      setStatus(copy.status.passwordMismatch);
+      return;
+    }
+
+    updateAppState((current) => ({
+      ...current,
+      accounts: current.accounts.map((account) =>
+        account.id === current.activeAccountId ? { ...account, password: nextPassword } : account,
+      ),
+    }));
+
+    event.currentTarget.reset();
+    setStatus(copy.status.passwordReset);
   }
 
   function handleDeleteAccount() {
@@ -865,6 +1157,78 @@ export default function Page() {
     submitActivityRequest(selectedCategory, title, points);
     setRequestTitle("");
     setRequestPoints("");
+  }
+
+  function handleSubmitFeedback(event) {
+    event.preventDefault();
+    if (!activeAccount) {
+      setStatus(copy.status.pleaseLogin);
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const suggestion = String(formData.get("suggestion") || "").trim();
+    const category = String(formData.get("category") || "").trim() || "mobility";
+
+    if (!suggestion) {
+      setStatus(copy.status.fillAll);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      const subject = encodeURIComponent(`EcoTrack Verbesserungsvorschlag von ${activeAccount.name}`);
+      const body = encodeURIComponent(
+        `Verbesserungsvorschlag fuer EcoTrack\n\nUser-Name: ${activeAccount.name}\nE-Mail: ${activeAccount.email}\nBereich: ${getFeedbackCategoryLabel(category, "de", COPY.de)}\n\nVorschlag:\n${suggestion}`,
+      );
+      window.location.href = `mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`;
+    }
+
+    event.currentTarget.reset();
+    setFeedbackCategory("general");
+    setStatus(copy.status.feedbackSent);
+  }
+
+  function handleCreateProposal(event) {
+    event.preventDefault();
+    if (!activeAccount) {
+      setStatus(copy.status.pleaseLogin);
+      return;
+    }
+
+    const title = proposalTitle.trim();
+    const points = Number(proposalPoints);
+
+    if (!title || Number.isNaN(points) || points < 1) {
+      setStatus(copy.status.customInvalid);
+      return;
+    }
+
+    updateAppState((current) => {
+      const proposal = {
+        id: crypto.randomUUID(),
+        createdBy: current.activeAccountId,
+        createdByName: activeAccount.name,
+        category: proposalCategory,
+        title,
+        proposedPoints: points,
+        createdAt: new Date().toISOString(),
+        votes: {},
+      };
+
+      return {
+        ...current,
+        customProposals: [proposal, ...(current.customProposals || [])].slice(0, 40),
+        chatMessages: appendChatEntry(
+          current,
+          `${getCategoryLabel(proposalCategory, language)}: ${copy.status.customProposal(title, points)}`,
+        ),
+      };
+    });
+
+    setProposalTitle("");
+    setProposalPoints("");
+    setProposalCategory("mobility");
+    setStatus(copy.status.requestSubmitted(title));
   }
 
   function handleReviewActivityRequest(requestId, decision) {
@@ -1058,6 +1422,13 @@ export default function Page() {
               >
                 {copy.auth.login}
               </button>
+              <button
+                type="button"
+                className={`pill-button${authMode === "forgot" ? " active" : ""}`}
+                onClick={() => setAuthMode("forgot")}
+              >
+                {copy.auth.forgotPassword}
+              </button>
             </div>
           </div>
 
@@ -1066,19 +1437,19 @@ export default function Page() {
               <form className="stack" onSubmit={handleRegister}>
                 <label>
                   {copy.auth.fullName}
-                  <input name="name" type="text" maxLength="40" placeholder="Jens Ammann" required />
+                  <input name="name" type="text" maxLength="40" required />
                 </label>
                 <label>
                   {copy.auth.email}
-                  <input name="email" type="email" maxLength="80" placeholder="name@example.com" required />
+                  <input name="email" type="email" maxLength="80" required />
                 </label>
                 <label>
                   {copy.auth.city}
-                  <input name="city" type="text" maxLength="40" placeholder="Berlin" required />
+                  <input name="city" type="text" maxLength="40" required />
                 </label>
                 <label>
                   {copy.auth.age}
-                  <input name="age" type="number" min="16" max="99" placeholder="23" required />
+                  <input name="age" type="number" min="16" max="99" required />
                 </label>
                 <label>
                   {copy.auth.password}
@@ -1102,11 +1473,11 @@ export default function Page() {
                   {copy.auth.continue}
                 </button>
               </form>
-            ) : (
+            ) : authMode === "login" ? (
               <form className="stack" onSubmit={handleLogin}>
                 <label>
                   {copy.auth.email}
-                  <input name="email" type="email" maxLength="80" placeholder="name@example.com" required />
+                  <input name="email" type="email" maxLength="80" required />
                 </label>
                 <label>
                   {copy.auth.password}
@@ -1130,6 +1501,43 @@ export default function Page() {
                   {copy.auth.signIn}
                 </button>
               </form>
+            ) : (
+              <form className="stack" onSubmit={handleForgotPassword}>
+                <p className="chat-note">{copy.auth.resetText}</p>
+                <label>
+                  {copy.auth.email}
+                  <input name="email" type="email" maxLength="80" required />
+                </label>
+                <label>
+                  {copy.auth.city}
+                  <input name="city" type="text" maxLength="40" required />
+                </label>
+                <label>
+                  {copy.auth.age}
+                  <input name="age" type="number" min="16" max="99" required />
+                </label>
+                <label>
+                  {copy.settings.newPassword}
+                  <input
+                    name="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    minLength="4"
+                    maxLength="40"
+                    required
+                  />
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(event) => setShowPassword(event.target.checked)}
+                  />
+                  <span>{copy.auth.showPassword}</span>
+                </label>
+                <button type="submit" className="primary-button">
+                  {copy.auth.resetButton}
+                </button>
+              </form>
             )}
             <p className="status-message auth-status">{status}</p>
           </div>
@@ -1151,11 +1559,8 @@ export default function Page() {
 
         <div className="header-right">
           <div className="login-state">
-            {copy.loggedInAs} <strong>{activeAccount.name}</strong>
+            {copy.loggedInAs} <span> </span><strong>{activeAccount.name}</strong>
           </div>
-          <button type="button" className="secondary-button" onClick={() => setView("settings")}>
-            {copy.settings.navLabel}
-          </button>
           <button type="button" className="secondary-button" onClick={handleLogout}>
             {copy.logout}
           </button>
@@ -1163,16 +1568,53 @@ export default function Page() {
       </header>
 
       <nav className="top-nav" aria-label="Hauptnavigation">
-        {Object.entries(copy.primaryViewLabels).map(([key, label]) => (
+        <div className="top-nav-group">
+          {Object.entries(copy.primaryViewLabels).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              className={`nav-button${view === key ? " active" : ""}`}
+              onClick={() => setView(key)}
+            >
+              <span className="button-with-icon">
+                <IconSymbol name={VIEW_ICONS[key]} />
+                <span className="button-label">{label}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="top-nav-group top-nav-group-right">
           <button
-            key={key}
             type="button"
-            className={`nav-button${view === key ? " active" : ""}`}
-            onClick={() => setView(key)}
+            className={`nav-button${view === "settings" ? " active" : ""}`}
+            onClick={() => setView("settings")}
           >
-            {label}
+            <span className="button-with-icon">
+              <IconSymbol name={VIEW_ICONS.settings} />
+              <span className="button-label">{copy.settings.navLabel}</span>
+            </span>
           </button>
-        ))}
+          <button
+            type="button"
+            className={`nav-button${view === "feedback" ? " active" : ""}`}
+            onClick={() => setView("feedback")}
+          >
+            <span className="button-with-icon">
+              <IconSymbol name={VIEW_ICONS.feedback} />
+              <span className="button-label">{copy.feedback.navLabel}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`nav-button${view === "survey" ? " active" : ""}`}
+            onClick={() => setView("survey")}
+          >
+            <span className="button-with-icon">
+              <IconSymbol name={VIEW_ICONS.survey} />
+              <span className="button-label">{copy.survey.navLabel}</span>
+            </span>
+          </button>
+        </div>
       </nav>
 
       <main className="content-stack">
@@ -1235,7 +1677,14 @@ export default function Page() {
             proposals={proposals}
             chatMessage={chatMessage}
             setChatMessage={setChatMessage}
+            proposalTitle={proposalTitle}
+            setProposalTitle={setProposalTitle}
+            proposalPoints={proposalPoints}
+            setProposalPoints={setProposalPoints}
+            proposalCategory={proposalCategory}
+            setProposalCategory={setProposalCategory}
             handleSendChat={handleSendChat}
+            handleCreateProposal={handleCreateProposal}
             handleVoteOnProposal={handleVoteOnProposal}
             handleProposalReaction={handleProposalReaction}
             handleDeleteChatMessage={handleDeleteChatMessage}
@@ -1246,11 +1695,27 @@ export default function Page() {
           <SettingsPanel
             account={activeAccount}
             copy={copy}
+            language={language}
+            setLanguage={setLanguage}
             handleUpdateProfile={handleUpdateProfile}
             handleChangePassword={handleChangePassword}
+            handleResetPassword={handleResetPassword}
             handleDeleteAccount={handleDeleteAccount}
           />
         )}
+
+        {view === "feedback" && (
+          <FeedbackPanel
+            account={activeAccount}
+            copy={copy}
+            language={language}
+            feedbackCategory={feedbackCategory}
+            setFeedbackCategory={setFeedbackCategory}
+            handleSubmitFeedback={handleSubmitFeedback}
+          />
+        )}
+
+        {view === "survey" && <SurveyPanel copy={copy} />}
       </main>
     </div>
   );
@@ -1292,6 +1757,69 @@ function SustainabilityPanel({ copy }) {
         </article>
       </div>
     </section>
+  );
+}
+
+function IconSymbol({ name }) {
+  const icons = {
+    leaf: (
+      <path d="M18 4C11.5 4.2 7.2 8 6.3 13c-.7 4.1 1.5 6.7 4.9 6.7 5.9 0 8.8-5.4 8.8-12.2V4Zm-2.2 4.6c-3.1 1.4-5.4 3.8-6.9 7.2" />
+    ),
+    spark: (
+      <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />
+    ),
+    chat: (
+      <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v5A2.5 2.5 0 0 1 16.5 14H11l-3.8 3v-3H7.5A2.5 2.5 0 0 1 5 11.5v-5Z" />
+    ),
+    settings: (
+      <>
+        <path d="M6 6h12M6 12h12M6 18h12" />
+        <path d="M9 4.5v3M15 10.5v3M11 16.5v3" />
+      </>
+    ),
+    feedback: (
+      <>
+        <path d="M12 4v10" />
+        <path d="M8.4 8.4A4.6 4.6 0 1 1 15.6 8.4" />
+        <path d="M9.2 18h5.6" />
+        <path d="M10 21h4" />
+      </>
+    ),
+    survey: (
+      <>
+        <path d="M8 5.5h8" />
+        <path d="M8 10h8" />
+        <path d="M8 14.5h5" />
+        <path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v13A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-13A1.5 1.5 0 0 1 6.5 4Z" />
+      </>
+    ),
+    mobility: (
+      <path d="M7 15.5a1.8 1.8 0 1 0 0 .1Zm10 0a1.8 1.8 0 1 0 0 .1ZM8.8 15.5h2.5l2.5-5h2.3l1.5 2.8m-8.6 2.2 2.2-4h3.1m-6.8 0-1.5-3h3.5l2.1 3" />
+    ),
+    nutrition: (
+      <path d="M12 5c2.8 0 5 2 5 4.6 0 3.8-5 8.4-5 8.4S7 13.4 7 9.6C7 7 9.2 5 12 5Zm0-2v18" />
+    ),
+    household: (
+      <path d="m4.5 10 7.5-6 7.5 6M7 8.6V19h10V8.6M10 19v-5h4v5" />
+    ),
+    custom: (
+      <path d="M12 4v16M4 12h16M6.5 6.5l11 11M17.5 6.5l-11 11" />
+    ),
+  };
+
+  return (
+    <span className="button-icon" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {icons[name] || icons.spark}
+      </svg>
+    </span>
   );
 }
 
@@ -1404,7 +1932,10 @@ function ActivityPanel({
             className={`category-button${selectedCategory === key ? " active" : ""}`}
             onClick={() => setSelectedCategory(key)}
           >
-            {label[language]}
+            <span className="button-with-icon">
+              <IconSymbol name={CATEGORY_ICONS[key]} />
+              <span className="button-label">{label[language]}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -1828,7 +2359,14 @@ function ChatPanel({
   proposals,
   chatMessage,
   setChatMessage,
+  proposalTitle,
+  setProposalTitle,
+  proposalPoints,
+  setProposalPoints,
+  proposalCategory,
+  setProposalCategory,
   handleSendChat,
+  handleCreateProposal,
   handleVoteOnProposal,
   handleProposalReaction,
   handleDeleteChatMessage,
@@ -1850,23 +2388,13 @@ function ChatPanel({
         <div className="chat-card">
           <h3 className="subhead">{copy.chat.chatTitle}</h3>
           <p className="chat-note">{copy.chat.chatBody}</p>
-          <form className="chat-form" onSubmit={handleSendChat}>
-            <input
-              type="text"
-              value={chatMessage}
-              onChange={(event) => setChatMessage(event.target.value)}
-              placeholder={copy.chat.placeholder(activeAccount.name)}
-              maxLength="200"
-            />
-            <button type="submit" className="primary-button small-button">
-              {copy.chat.send}
-            </button>
-          </form>
-
           <div className="message-list">
             {chatMessages.length ? (
               chatMessages.map((entry) => (
-                <article key={entry.id} className="message-item">
+                <article
+                  key={entry.id}
+                  className={`message-item${entry.accountId === activeAccount.id ? " own-message" : ""}`}
+                >
                   <div className="message-head">
                     <div className="message-meta">
                       <strong>{entry.author}</strong>
@@ -1882,18 +2410,74 @@ function ChatPanel({
                       </button>
                     ) : null}
                   </div>
-                  <p>{entry.message}</p>
+                  <p className="message-bubble">{entry.message}</p>
                 </article>
               ))
             ) : (
               <p className="empty-note">{copy.chat.noMessages}</p>
             )}
           </div>
+
+          <form className="chat-form" onSubmit={handleSendChat}>
+            <input
+              type="text"
+              value={chatMessage}
+              onChange={(event) => setChatMessage(event.target.value)}
+              placeholder={copy.chat.placeholder(activeAccount.name)}
+              maxLength="200"
+            />
+            <button type="submit" className="primary-button small-button">
+              {copy.chat.send}
+            </button>
+          </form>
         </div>
 
         <div className="chat-card">
           <h3 className="subhead">{copy.chat.proposalTitle}</h3>
           <p className="chat-note">{copy.chat.proposalBody}</p>
+          <form className="custom-card proposal-create-card" onSubmit={handleCreateProposal}>
+            <h4>{copy.chat.createTitle}</h4>
+            <label>
+              {copy.chat.createLabel}
+              <input
+                type="text"
+                value={proposalTitle}
+                onChange={(event) => setProposalTitle(event.target.value)}
+                placeholder={copy.chat.createPlaceholder}
+                maxLength="120"
+                required
+              />
+            </label>
+            <div className="proposal-create-grid">
+              <label>
+                {copy.chat.createPoints}
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={proposalPoints}
+                  onChange={(event) => setProposalPoints(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                {copy.chat.createCategory}
+                <select
+                  value={proposalCategory}
+                  onChange={(event) => setProposalCategory(event.target.value)}
+                >
+                  {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label[language]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <button type="submit" className="primary-button small-button">
+              {copy.chat.createButton}
+            </button>
+          </form>
           <div className="proposal-list">
             {visibleProposals.length ? (
               visibleProposals.map((proposal) => {
@@ -1963,8 +2547,11 @@ function ChatPanel({
 function SettingsPanel({
   account,
   copy,
+  language,
+  setLanguage,
   handleUpdateProfile,
   handleChangePassword,
+  handleResetPassword,
   handleDeleteAccount,
 }) {
   return (
@@ -2000,24 +2587,61 @@ function SettingsPanel({
           </button>
         </form>
 
-        <form className="custom-card" onSubmit={handleChangePassword}>
-          <h3>{copy.settings.passwordTitle}</h3>
-          <label>
-            {copy.settings.currentPassword}
-            <input name="currentPassword" type="password" minLength="4" maxLength="40" required />
-          </label>
-          <label>
-            {copy.settings.newPassword}
-            <input name="newPassword" type="password" minLength="4" maxLength="40" required />
-          </label>
-          <label>
-            {copy.settings.confirmPassword}
-            <input name="confirmPassword" type="password" minLength="4" maxLength="40" required />
-          </label>
-          <button type="submit" className="primary-button small-button">
-            {copy.settings.changePassword}
-          </button>
-        </form>
+        <div className="custom-card settings-stack-card">
+          <div className="language-block settings-language-block">
+            <p className="language-label">{copy.auth.language}</p>
+            <div className="auth-pill-row language-row">
+              <button
+                type="button"
+                className={`pill-button${language === "de" ? " active" : ""}`}
+                onClick={() => setLanguage("de")}
+              >
+                Deutsch
+              </button>
+              <button
+                type="button"
+                className={`pill-button${language === "en" ? " active" : ""}`}
+                onClick={() => setLanguage("en")}
+              >
+                English
+              </button>
+            </div>
+          </div>
+
+          <form className="stack" onSubmit={handleChangePassword}>
+            <h3>{copy.settings.passwordTitle}</h3>
+            <label>
+              {copy.settings.currentPassword}
+              <input name="currentPassword" type="password" minLength="4" maxLength="40" required />
+            </label>
+            <label>
+              {copy.settings.newPassword}
+              <input name="newPassword" type="password" minLength="4" maxLength="40" required />
+            </label>
+            <label>
+              {copy.settings.confirmPassword}
+              <input name="confirmPassword" type="password" minLength="4" maxLength="40" required />
+            </label>
+            <button type="submit" className="primary-button small-button">
+              {copy.settings.changePassword}
+            </button>
+          </form>
+
+          <form className="stack" onSubmit={handleResetPassword}>
+            <h3>{copy.settings.resetPasswordTitle}</h3>
+            <label>
+              {copy.settings.newPassword}
+              <input name="resetPassword" type="password" minLength="4" maxLength="40" required />
+            </label>
+            <label>
+              {copy.settings.confirmPassword}
+              <input name="resetConfirmPassword" type="password" minLength="4" maxLength="40" required />
+            </label>
+            <button type="submit" className="secondary-button small-button">
+              {copy.settings.resetPasswordButton}
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="table-card danger-card">
@@ -2025,6 +2649,92 @@ function SettingsPanel({
         <p className="chat-note">{copy.settings.deleteText}</p>
         <button type="button" className="secondary-button" onClick={handleDeleteAccount}>
           {copy.settings.deleteButton}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function FeedbackPanel({
+  account,
+  copy,
+  language,
+  feedbackCategory,
+  setFeedbackCategory,
+  handleSubmitFeedback,
+}) {
+  return (
+    <section className="panel settings-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.feedback.eyebrow}</p>
+          <h2>{copy.feedback.title}</h2>
+        </div>
+      </div>
+
+      <form className="custom-card feedback-card" onSubmit={handleSubmitFeedback}>
+        <label>
+          {copy.feedback.userLabel}
+          <input type="text" value={account.name} readOnly />
+        </label>
+        <label>
+          {copy.feedback.categoryLabel}
+          <div className="category-row inline-category-row">
+            {Object.entries(FEEDBACK_CATEGORY_LABELS).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                className={`category-button${feedbackCategory === key ? " active" : ""}`}
+                onClick={() => setFeedbackCategory(key)}
+              >
+                <span className="button-with-icon">
+                  <IconSymbol name={CATEGORY_ICONS[key] || VIEW_ICONS.feedback} />
+                  <span className="button-label">{label[language]}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <input type="hidden" name="category" value={feedbackCategory} />
+        </label>
+        <label>
+          {copy.feedback.suggestionLabel}
+          <textarea
+            name="suggestion"
+            rows="6"
+            maxLength="1500"
+            placeholder={copy.feedback.suggestionPlaceholder}
+            required
+          />
+        </label>
+        <button type="submit" className="primary-button small-button">
+          {copy.feedback.submit}
+        </button>
+      </form>
+    </section>
+  );
+}
+
+function SurveyPanel({ copy }) {
+  function openSurvey() {
+    if (typeof window !== "undefined") {
+      window.open(SURVEY_URL, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  return (
+    <section className="panel settings-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">{copy.survey.eyebrow}</p>
+          <h2>{copy.survey.title}</h2>
+        </div>
+      </div>
+
+      <div className="custom-card feedback-card survey-card">
+        <p className="chat-note">{copy.survey.text}</p>
+        <p className="survey-link">{copy.survey.linkLabel}: {SURVEY_URL}</p>
+        <button type="button" className="primary-button small-button" onClick={openSurvey}>
+          {copy.survey.button}
         </button>
       </div>
     </section>
@@ -2107,22 +2817,22 @@ function UtilityNav({ activeView, setView = () => {}, copy }) {
 
 function loadState() {
   if (typeof window === "undefined") {
-    return EMPTY_STATE;
+    return ensureSeedData(EMPTY_STATE);
   }
 
   const current = parseStorage(STORAGE_KEY);
   if (current) {
-    return current;
+    return ensureSeedData(current);
   }
 
   for (const legacyKey of LEGACY_STORAGE_KEYS) {
     const legacy = parseStorage(legacyKey);
     if (legacy) {
-      return legacy;
+      return ensureSeedData(legacy);
     }
   }
 
-  return EMPTY_STATE;
+  return ensureSeedData(EMPTY_STATE);
 }
 
 function parseStorage(key) {
@@ -2451,6 +3161,14 @@ function getLevelName(level) {
 
 function getCategoryLabel(category, language = "de") {
   return CATEGORY_LABELS[category]?.[language] || CATEGORY_LABELS.custom[language];
+}
+
+function getFeedbackCategoryLabel(category, language = "de", copy = COPY[language]) {
+  if (category === "general") {
+    return copy.feedback.generalArea;
+  }
+
+  return FEEDBACK_CATEGORY_LABELS[category]?.[language] || FEEDBACK_CATEGORY_LABELS.general[language];
 }
 
 function getTreeGrowth(levelStats, copy) {
