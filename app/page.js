@@ -1559,7 +1559,7 @@ export default function Page() {
 
         <div className="header-right">
           <div className="login-state">
-            {copy.loggedInAs} <span> </span><strong>{activeAccount.name}</strong>
+            {copy.loggedInAs}<strong className="login-name">{activeAccount.name}</strong>
           </div>
           <button type="button" className="secondary-button" onClick={handleLogout}>
             {copy.logout}

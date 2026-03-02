@@ -352,6 +352,10 @@ select:focus {
   font-size: 0.9rem;
 }
 
+.login-name {
+  margin-left: 0.3rem;
+}
+
 .top-nav {
   margin-bottom: 1rem;
 }
@@ -473,7 +477,7 @@ select:focus {
 
 .level-tree-scene {
   position: relative;
-  height: 210px;
+  height: 260px;
   margin-top: 0.75rem;
   border-radius: 18px;
   overflow: hidden;
@@ -496,8 +500,8 @@ select:focus {
   position: absolute;
   left: 50%;
   bottom: 40px;
-  width: 134px;
-  height: 56px;
+  width: 120px;
+  height: 50px;
   transform-origin: center bottom;
   translate: -50% 0;
   transition: opacity 220ms ease, transform 220ms ease;
@@ -506,10 +510,10 @@ select:focus {
 .tree-roots span {
   position: absolute;
   bottom: 8px;
-  width: 54px;
-  height: 30px;
-  border-bottom: 5px solid #7a4b2b;
-  border-radius: 0 0 24px 24px;
+  width: 48px;
+  height: 26px;
+  border-bottom: 4px solid #7a4b2b;
+  border-radius: 0 0 20px 20px;
 }
 
 .tree-roots span:nth-child(1) {
@@ -519,7 +523,7 @@ select:focus {
 
 .tree-roots span:nth-child(2) {
   left: 40px;
-  width: 48px;
+  width: 42px;
 }
 
 .tree-roots span:nth-child(3) {
@@ -531,8 +535,8 @@ select:focus {
   position: absolute;
   left: 50%;
   bottom: 54px;
-  width: 28px;
-  min-height: 44px;
+  width: 24px;
+  min-height: 40px;
   border-radius: 16px 16px 8px 8px;
   background: linear-gradient(180deg, #9b6337, #7a4b2b);
   transform: translateX(-50%);
@@ -544,7 +548,7 @@ select:focus {
 .tree-trunk::before {
   content: "";
   position: absolute;
-  inset: 18px 9px 10px;
+  inset: 16px 7px 9px;
   border-radius: 999px;
   background: rgba(255, 242, 228, 0.12);
 }
@@ -553,8 +557,8 @@ select:focus {
   position: absolute;
   left: 50%;
   top: 12px;
-  width: 118px;
-  height: 56px;
+  width: 102px;
+  height: 46px;
   transform: translateX(-50%);
   transform-origin: center;
   transition: opacity 220ms ease, transform 220ms ease;
@@ -565,9 +569,9 @@ select:focus {
 .tree-branches::after {
   content: "";
   position: absolute;
-  top: 16px;
-  width: 42px;
-  height: 5px;
+  top: 14px;
+  width: 36px;
+  height: 4px;
   border-radius: 999px;
   background: #8a5530;
 }
@@ -596,21 +600,21 @@ select:focus {
 }
 
 .canopy-front {
-  bottom: 110px;
-  width: 98px;
-  height: 86px;
+  bottom: 96px;
+  width: 82px;
+  height: 68px;
 }
 
 .canopy-mid {
-  bottom: 136px;
-  width: 132px;
-  height: 98px;
+  bottom: 118px;
+  width: 106px;
+  height: 78px;
 }
 
 .canopy-back {
-  bottom: 156px;
-  width: 154px;
-  height: 108px;
+  bottom: 138px;
+  width: 122px;
+  height: 86px;
 }
 
 .subhead {
