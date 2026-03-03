@@ -25,6 +25,7 @@ body {
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
   font-family: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
   color: var(--ink);
   background:
@@ -1282,7 +1283,63 @@ button:disabled {
     font-size: clamp(2rem, 10vw, 3rem);
   }
 
+  .auth-pill-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .auth-pill-row .pill-button {
+    width: 100%;
+  }
+
   .h-row {
     grid-template-columns: 64px minmax(0, 1fr) 36px;
+  }
+
+  .micro-nav,
+  .batch-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .micro-button,
+  .batch-actions .secondary-button,
+  .batch-actions .primary-button,
+  .batch-remove,
+  .suggestion-card .primary-button,
+  .custom-card .secondary-button {
+    width: 100%;
+  }
+
+  .category-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .category-button {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 0.8rem;
+  }
+
+  .button-with-icon {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .button-label {
+    overflow-wrap: anywhere;
+  }
+
+  .batch-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-card {
+    max-width: none;
   }
 }

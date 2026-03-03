@@ -276,8 +276,8 @@ const COPY = {
       accountExists: "Zu dieser E-Mail gibt es bereits ein Konto.",
       registerWelcome: (name) =>
         `Schön, dass du ein Teil der EcoTrack Community bist, ${name}. Viel Spaß und viel Erfolg.`,
-      accountMissing: "Kein Konto zu dieser E-Mail gefunden.",
-      wrongPassword: "Passwort stimmt nicht.",
+      accountMissing: "Die E-Mail ist falsch.",
+      wrongPassword: "E-Mail oder Passwort falsch.",
       welcomeBack: (name) => `Willkommen zurück, ${name}.`,
       loggedOut: "Du wurdest ausgeloggt.",
       pleaseLogin: "Bitte zuerst anmelden.",
@@ -512,8 +512,8 @@ const COPY = {
       accountExists: "An account already exists for this email.",
       registerWelcome: (name) =>
         `Welcome to the EcoTrack community, ${name}. Have fun and good luck.`,
-      accountMissing: "No account found for this email.",
-      wrongPassword: "Password is incorrect.",
+      accountMissing: "The email is incorrect.",
+      wrongPassword: "Email or password is incorrect.",
       welcomeBack: (name) => `Welcome back, ${name}.`,
       loggedOut: "You have been logged out.",
       pleaseLogin: "Please sign in first.",
@@ -838,40 +838,6 @@ export default function Page() {
     setStatus(copy.status.welcomeBack(account.name));
   }
 
-  function handleForgotPassword(event) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") || "").trim().toLowerCase();
-    const city = String(formData.get("city") || "").trim();
-    const age = String(formData.get("age") || "").trim();
-    const nextPassword = String(formData.get("newPassword") || "").trim();
-
-    const account = appState.accounts.find(
-      (item) => item.email === email && item.city === city && String(item.age) === age,
-    );
-
-    if (!account) {
-      setStatus(copy.status.resetDataMismatch);
-      return;
-    }
-
-    if (nextPassword.length < 4) {
-      setStatus(copy.status.passwordTooShort);
-      return;
-    }
-
-    updateAppState((current) => ({
-      ...current,
-      accounts: current.accounts.map((item) =>
-        item.id === account.id ? { ...item, password: nextPassword } : item,
-      ),
-    }));
-
-    event.currentTarget.reset();
-    setAuthMode("login");
-    setStatus(copy.status.passwordReset);
-  }
-
   function handleLogout() {
     updateAppState((current) => ({
       ...current,
@@ -964,37 +930,6 @@ export default function Page() {
 
     event.currentTarget.reset();
     setStatus(copy.status.passwordChanged);
-  }
-
-  function handleResetPassword(event) {
-    event.preventDefault();
-    if (!activeAccount) {
-      return;
-    }
-
-    const formData = new FormData(event.currentTarget);
-    const nextPassword = String(formData.get("resetPassword") || "").trim();
-    const confirmPassword = String(formData.get("resetConfirmPassword") || "").trim();
-
-    if (nextPassword.length < 4) {
-      setStatus(copy.status.passwordTooShort);
-      return;
-    }
-
-    if (nextPassword !== confirmPassword) {
-      setStatus(copy.status.passwordMismatch);
-      return;
-    }
-
-    updateAppState((current) => ({
-      ...current,
-      accounts: current.accounts.map((account) =>
-        account.id === current.activeAccountId ? { ...account, password: nextPassword } : account,
-      ),
-    }));
-
-    event.currentTarget.reset();
-    setStatus(copy.status.passwordReset);
   }
 
   function handleDeleteAccount() {
@@ -1438,13 +1373,6 @@ export default function Page() {
               >
                 {copy.auth.login}
               </button>
-              <button
-                type="button"
-                className={`pill-button${authMode === "forgot" ? " active" : ""}`}
-                onClick={() => setAuthMode("forgot")}
-              >
-                {copy.auth.forgotPassword}
-              </button>
             </div>
           </div>
 
@@ -1489,7 +1417,7 @@ export default function Page() {
                   {copy.auth.continue}
                 </button>
               </form>
-            ) : authMode === "login" ? (
+            ) : (
               <form className="stack" onSubmit={handleLogin}>
                 <label>
                   {copy.auth.email}
@@ -1515,43 +1443,6 @@ export default function Page() {
                 </label>
                 <button type="submit" className="primary-button">
                   {copy.auth.signIn}
-                </button>
-              </form>
-            ) : (
-              <form className="stack" onSubmit={handleForgotPassword}>
-                <p className="chat-note">{copy.auth.resetText}</p>
-                <label>
-                  {copy.auth.email}
-                  <input name="email" type="email" maxLength="80" required />
-                </label>
-                <label>
-                  {copy.auth.city}
-                  <input name="city" type="text" maxLength="40" required />
-                </label>
-                <label>
-                  {copy.auth.age}
-                  <input name="age" type="number" min="16" max="99" required />
-                </label>
-                <label>
-                  {copy.settings.newPassword}
-                  <input
-                    name="newPassword"
-                    type={showPassword ? "text" : "password"}
-                    minLength="4"
-                    maxLength="40"
-                    required
-                  />
-                </label>
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={showPassword}
-                    onChange={(event) => setShowPassword(event.target.checked)}
-                  />
-                  <span>{copy.auth.showPassword}</span>
-                </label>
-                <button type="submit" className="primary-button">
-                  {copy.auth.resetButton}
                 </button>
               </form>
             )}
@@ -1715,7 +1606,6 @@ export default function Page() {
             setLanguage={setLanguage}
             handleUpdateProfile={handleUpdateProfile}
             handleChangePassword={handleChangePassword}
-            handleResetPassword={handleResetPassword}
             handleDeleteAccount={handleDeleteAccount}
           />
         )}
@@ -2567,7 +2457,6 @@ function SettingsPanel({
   setLanguage,
   handleUpdateProfile,
   handleChangePassword,
-  handleResetPassword,
   handleDeleteAccount,
 }) {
   return (
@@ -2640,21 +2529,6 @@ function SettingsPanel({
             </label>
             <button type="submit" className="primary-button small-button">
               {copy.settings.changePassword}
-            </button>
-          </form>
-
-          <form className="stack" onSubmit={handleResetPassword}>
-            <h3>{copy.settings.resetPasswordTitle}</h3>
-            <label>
-              {copy.settings.newPassword}
-              <input name="resetPassword" type="password" minLength="4" maxLength="40" required />
-            </label>
-            <label>
-              {copy.settings.confirmPassword}
-              <input name="resetConfirmPassword" type="password" minLength="4" maxLength="40" required />
-            </label>
-            <button type="submit" className="secondary-button small-button">
-              {copy.settings.resetPasswordButton}
             </button>
           </form>
         </div>
