@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 const STORAGE_KEY = "ecoboard-data-v7";
 const LANGUAGE_KEY = "ecoboard-language-v1";
@@ -105,6 +107,8 @@ const COPY = {
       resetText:
         "Wenn du dein Passwort vergessen hast, kannst du es mit E-Mail, Stadt und Alter lokal zurücksetzen.",
       resetButton: "Passwort zurücksetzen",
+      requiredField: "Pflichtfeld",
+      loading: "Daten werden geladen...",
     },
     headerTitle: "Dein nachhaltiges Verhalten im Blick",
     loggedInAs: "Eingeloggt als",
@@ -243,6 +247,11 @@ const COPY = {
       button: "Umfrage öffnen",
       linkLabel: "Microsoft Forms",
     },
+    imprint: {
+      label: "Impressum",
+      title: "Impressum",
+      body: "Bitte Impressumstext hier ergänzen.",
+    },
     chat: {
       eyebrow: "Community",
       title: "Chat und Abstimmungen",
@@ -306,6 +315,7 @@ const COPY = {
       resetDataMismatch: "Die Angaben passen zu keinem Konto.",
       accountDeleted: "Dein Account wurde gelöscht.",
       feedbackSent: "Dein Verbesserungsvorschlag wurde an den Entwickler gesendet.",
+      genericError: "Technischer Fehler. Bitte erneut versuchen.",
     },
   },
   en: {
@@ -341,6 +351,8 @@ const COPY = {
       resetText:
         "If you forgot your password, you can reset it locally using your email, city, and age.",
       resetButton: "Reset Password",
+      requiredField: "Required field",
+      loading: "Loading data...",
     },
     headerTitle: "Track your sustainable habits at a glance",
     loggedInAs: "Signed in as",
@@ -479,6 +491,11 @@ const COPY = {
       button: "Open Survey",
       linkLabel: "Microsoft Forms",
     },
+    imprint: {
+      label: "Legal Notice",
+      title: "Legal Notice",
+      body: "Please add the legal notice text here.",
+    },
     chat: {
       eyebrow: "Community",
       title: "Chat and Voting",
@@ -542,6 +559,7 @@ const COPY = {
       resetDataMismatch: "The provided details do not match any account.",
       accountDeleted: "Your account was deleted.",
       feedbackSent: "Your suggestion was sent to the developer.",
+      genericError: "Technical error. Please try again.",
     },
   },
 };
@@ -582,6 +600,44 @@ const SUGGESTIONS = {
     { title: "Baum oder Pflanze gesetzt", points: 5, note: "Plant a Tree or Plant." },
     { title: "An Nachhaltigkeits-Event teilgenommen", points: 4, note: "Participate in Sustainability Event." },
   ],
+};
+
+const ACTIVITY_EN_OVERRIDES = {
+  mobility: {
+    "Mit dem Fahrrad zur Arbeit": "Bike to work",
+    "Zu Fuß zur Arbeit": "Walk to work",
+    "Öffentliche Verkehrsmittel genutzt": "Used public transport",
+    "Fahrgemeinschaft organisiert": "Organized carpooling",
+    "Home Office statt Pendeln": "Worked from home instead of commuting",
+    "Kurze Strecke ohne Auto": "Short trip without car",
+    "E-Bike statt Auto genutzt": "Used e-bike instead of car",
+  },
+  nutrition: {
+    "Vegetarisch gegessen": "Ate vegetarian",
+    "Vegan gegessen": "Ate vegan",
+    "Selbst gekocht": "Cooked at home",
+    "Reste verwertet": "Used leftovers",
+    "Leitungswasser statt Flaschenwasser": "Drank tap water instead of bottled water",
+    "Regionale Produkte gekauft": "Bought regional products",
+    "Lebensmittel vor Verschwendung gerettet": "Saved food from waste",
+  },
+  household: {
+    "Duschzeit reduziert": "Reduced shower time",
+    "Waschmaschine voll beladen genutzt": "Used fully loaded washing machine",
+    "Wäsche luftgetrocknet": "Air-dried laundry",
+    "Geschirrspüler im Eco-Modus": "Used dishwasher eco mode",
+    "Standby-Geräte ausgeschaltet": "Switched off standby devices",
+    "Heizung gesenkt": "Lowered heating",
+    "Licht ausgeschaltet, wenn nicht nötig": "Switched off lights when not needed",
+  },
+  custom: {
+    "Second-Hand-Produkt gekauft": "Bought second-hand product",
+    "Kleidung repariert": "Repaired clothing",
+    "Elektronisches Gerät repariert": "Repaired electronic device",
+    "Wiederverwendbare Produkte genutzt": "Used reusable products",
+    "Baum oder Pflanze gesetzt": "Planted a tree or plant",
+    "An Nachhaltigkeits-Event teilgenommen": "Joined a sustainability event",
+  },
 };
 
 const EMPTY_STATE = {
@@ -697,7 +753,7 @@ function ensureSeedData(state) {
 
 export default function Page() {
   const [appState, setAppState] = useState(EMPTY_STATE);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasHydratedState, setHasHydratedState] = useState(false);
   const [language, setLanguage] = useState("de");
   const [status, setStatus] = useState(COPY.de.status.loginFirst);
   const [authMode, setAuthMode] = useState("register");
@@ -713,34 +769,51 @@ export default function Page() {
   const [chatMessage, setChatMessage] = useState("");
   const [pendingActivities, setPendingActivities] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const remoteAppState = useQuery(api.appState.get, { name: "main" });
+  const saveRemoteAppState = useMutation(api.appState.save);
+  const registerUser = useMutation(api.users.register);
+  const loginUser = useMutation(api.users.login);
+  const updateUserProfile = useMutation(api.users.updateProfile);
+  const changeUserPassword = useMutation(api.users.changePassword);
+  const deleteUser = useMutation(api.users.deleteUser);
+  const upsertActivityCatalog = useMutation(api.activityTracking.upsertCatalog);
+  const addActivityEntries = useMutation(api.activityTracking.addEntries);
   const copy = COPY[language];
 
   useEffect(() => {
-    let nextLanguage = "de";
     if (typeof window !== "undefined") {
       const storedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
       if (storedLanguage === "de" || storedLanguage === "en") {
-        nextLanguage = storedLanguage;
         setLanguage(storedLanguage);
       }
-    }
-
-    const loaded = loadState();
-    setAppState(loaded);
-    setHasLoaded(true);
-
-    if (loaded.activeAccountId) {
-      setStatus(COPY[nextLanguage].status.signedIn);
     }
   }, []);
 
   useEffect(() => {
-    if (!hasLoaded || typeof window === "undefined") {
+    if (hasHydratedState || remoteAppState === undefined) {
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-  }, [appState, hasLoaded]);
+    const loaded = remoteAppState?.state
+      ? normalizeStoredState(remoteAppState.state)
+      : loadState();
+    setAppState(loaded);
+    setHasHydratedState(true);
+
+    if (loaded.activeAccountId) {
+      setStatus(COPY[language].status.signedIn);
+    }
+  }, [hasHydratedState, language, remoteAppState]);
+
+  useEffect(() => {
+    if (!hasHydratedState) {
+      return;
+    }
+
+    saveRemoteAppState({ name: "main", state: appState }).catch((error) => {
+      console.error("Konnte App-Status nicht in Convex speichern.", error);
+    });
+  }, [appState, hasHydratedState, saveRemoteAppState]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -764,13 +837,38 @@ export default function Page() {
   const categorySuggestions = [
     ...SUGGESTIONS[selectedCategory],
     ...approvedActivities.filter((item) => item.category === selectedCategory),
-  ];
+  ].map((item) => localizeActivityForLanguage(item, language));
+
+  useEffect(() => {
+    if (!hasHydratedState) {
+      return;
+    }
+
+    const items = buildCatalogItems(approvedActivities);
+    upsertActivityCatalog({ items }).catch((error) => {
+      console.error("Konnte Aktivitätskatalog nicht synchronisieren.", error);
+    });
+  }, [approvedActivities, hasHydratedState, upsertActivityCatalog]);
 
   function updateAppState(updater) {
     setAppState((current) => (typeof updater === "function" ? updater(current) : updater));
   }
 
-  function handleRegister(event) {
+  function upsertAccountFromUser(current, user) {
+    const mapped = mapUserToAccount(user);
+    const existing = current.accounts.find((account) => account.id === mapped.id);
+    const merged = existing ? { ...existing, ...mapped } : mapped;
+
+    return {
+      ...current,
+      accounts: existing
+        ? current.accounts.map((account) => (account.id === merged.id ? merged : account))
+        : [...current.accounts, merged],
+      activeAccountId: merged.id,
+    };
+  }
+
+  async function handleRegister(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") || "").trim();
@@ -784,58 +882,57 @@ export default function Page() {
       return;
     }
 
-    if (appState.accounts.some((account) => account.email === email)) {
-      setStatus(copy.status.accountExists);
-      return;
+    try {
+      const result = await registerUser({ name, email, city, age, password });
+      if (!result?.ok) {
+        if (result?.reason === "account_exists") {
+          setStatus(copy.status.accountExists);
+          return;
+        }
+        setStatus(copy.status.genericError);
+        return;
+      }
+
+      updateAppState((current) => upsertAccountFromUser(current, result.user));
+      event.currentTarget.reset();
+      setView("sustainability");
+      setStatus(copy.status.registerWelcome(result.user.name));
+    } catch (error) {
+      console.error("Registrierung fehlgeschlagen.", error);
+      setStatus(copy.status.genericError);
     }
-
-    const account = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      city,
-      age,
-      password,
-      createdAt: new Date().toISOString(),
-      activities: [],
-    };
-
-    updateAppState((current) => ({
-      ...current,
-      accounts: [...current.accounts, account],
-      activeAccountId: account.id,
-    }));
-
-    event.currentTarget.reset();
-    setView("sustainability");
-    setStatus(copy.status.registerWelcome(account.name));
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") || "").trim().toLowerCase();
     const password = String(formData.get("password") || "").trim();
 
-    const account = appState.accounts.find((item) => item.email === email);
-    if (!account) {
-      setStatus(copy.status.accountMissing);
+    if (!email || !password) {
+      setStatus(copy.status.fillAll);
       return;
     }
 
-    if (account.password !== password) {
-      setStatus(copy.status.wrongPassword);
-      return;
+    try {
+      const result = await loginUser({ email, password });
+      if (!result?.ok) {
+        if (result?.reason === "email_incorrect") {
+          setStatus(copy.status.accountMissing);
+          return;
+        }
+        setStatus(copy.status.wrongPassword);
+        return;
+      }
+
+      updateAppState((current) => upsertAccountFromUser(current, result.user));
+      event.currentTarget.reset();
+      setView("sustainability");
+      setStatus(copy.status.welcomeBack(result.user.name));
+    } catch (error) {
+      console.error("Login fehlgeschlagen.", error);
+      setStatus(copy.status.genericError);
     }
-
-    updateAppState((current) => ({
-      ...current,
-      activeAccountId: account.id,
-    }));
-
-    event.currentTarget.reset();
-    setView("sustainability");
-    setStatus(copy.status.welcomeBack(account.name));
   }
 
   function handleLogout() {
@@ -855,9 +952,9 @@ export default function Page() {
     setStatus(copy.status.signedIn);
   }
 
-  function handleUpdateProfile(event) {
+  async function handleUpdateProfile(event) {
     event.preventDefault();
-    if (!activeAccount) {
+    if (!activeAccount || !activeAccount.backendUserId) {
       return;
     }
 
@@ -872,30 +969,34 @@ export default function Page() {
       return;
     }
 
-    if (
-      appState.accounts.some(
-        (account) => account.id !== activeAccount.id && account.email === email,
-      )
-    ) {
-      setStatus(copy.status.accountExists);
-      return;
+    try {
+      const result = await updateUserProfile({
+        userId: activeAccount.backendUserId,
+        name,
+        email,
+        city,
+        age,
+      });
+      if (!result?.ok) {
+        if (result?.reason === "account_exists") {
+          setStatus(copy.status.accountExists);
+          return;
+        }
+        setStatus(copy.status.genericError);
+        return;
+      }
+
+      updateAppState((current) => upsertAccountFromUser(current, result.user));
+      setStatus(copy.status.profileUpdated);
+    } catch (error) {
+      console.error("Profil-Update fehlgeschlagen.", error);
+      setStatus(copy.status.genericError);
     }
-
-    updateAppState((current) => ({
-      ...current,
-      accounts: current.accounts.map((account) =>
-        account.id === current.activeAccountId
-          ? { ...account, name, email, city, age }
-          : account,
-      ),
-    }));
-
-    setStatus(copy.status.profileUpdated);
   }
 
-  function handleChangePassword(event) {
+  async function handleChangePassword(event) {
     event.preventDefault();
-    if (!activeAccount) {
+    if (!activeAccount || !activeAccount.backendUserId) {
       return;
     }
 
@@ -903,11 +1004,6 @@ export default function Page() {
     const currentPassword = String(formData.get("currentPassword") || "").trim();
     const nextPassword = String(formData.get("newPassword") || "").trim();
     const confirmPassword = String(formData.get("confirmPassword") || "").trim();
-
-    if (currentPassword !== activeAccount.password) {
-      setStatus(copy.status.currentPasswordWrong);
-      return;
-    }
 
     if (nextPassword.length < 4) {
       setStatus(copy.status.passwordTooShort);
@@ -919,41 +1015,78 @@ export default function Page() {
       return;
     }
 
-    updateAppState((current) => ({
-      ...current,
-      accounts: current.accounts.map((account) =>
-        account.id === current.activeAccountId
-          ? { ...account, password: nextPassword }
-          : account,
-      ),
-    }));
+    try {
+      const result = await changeUserPassword({
+        userId: activeAccount.backendUserId,
+        currentPassword,
+        newPassword: nextPassword,
+      });
+      if (!result?.ok) {
+        if (result?.reason === "current_password_wrong") {
+          setStatus(copy.status.currentPasswordWrong);
+          return;
+        }
+        setStatus(copy.status.genericError);
+        return;
+      }
 
-    event.currentTarget.reset();
-    setStatus(copy.status.passwordChanged);
+      updateAppState((current) => upsertAccountFromUser(current, result.user));
+      event.currentTarget.reset();
+      setStatus(copy.status.passwordChanged);
+    } catch (error) {
+      console.error("Passwort-Update fehlgeschlagen.", error);
+      setStatus(copy.status.genericError);
+    }
   }
 
-  function handleDeleteAccount() {
-    if (!activeAccount) {
+  async function handleDeleteAccount() {
+    if (!activeAccount || !activeAccount.backendUserId) {
       return;
     }
 
-    updateAppState((current) => ({
-      ...current,
-      accounts: current.accounts.filter((account) => account.id !== current.activeAccountId),
-      activeAccountId: null,
-      chatMessages: (current.chatMessages || []).filter(
-        (entry) => entry.accountId !== current.activeAccountId,
-      ),
-      customProposals: (current.customProposals || []).filter(
-        (proposal) => proposal.createdBy !== current.activeAccountId,
-      ),
-      activityRequests: (current.activityRequests || []).filter(
-        (request) => request.createdBy !== current.activeAccountId,
-      ),
-    }));
+    try {
+      const result = await deleteUser({ userId: activeAccount.backendUserId });
+      if (!result?.ok) {
+        setStatus(copy.status.genericError);
+        return;
+      }
 
-    setView("sustainability");
-    setStatus(copy.status.accountDeleted);
+      updateAppState((current) => ({
+        ...current,
+        accounts: current.accounts.filter((account) => account.id !== current.activeAccountId),
+        activeAccountId: null,
+        chatMessages: (current.chatMessages || []).filter(
+          (entry) => entry.accountId !== current.activeAccountId,
+        ),
+        customProposals: (current.customProposals || []).filter(
+          (proposal) => proposal.createdBy !== current.activeAccountId,
+        ),
+        activityRequests: (current.activityRequests || []).filter(
+          (request) => request.createdBy !== current.activeAccountId,
+        ),
+      }));
+
+      setView("sustainability");
+      setStatus(copy.status.accountDeleted);
+    } catch (error) {
+      console.error("Account-Löschung fehlgeschlagen.", error);
+      setStatus(copy.status.genericError);
+    }
+  }
+
+  if (!hasHydratedState) {
+    return (
+      <div className="auth-shell">
+        <section className="auth-stage">
+          <div className="auth-copy">
+            <p className="eyebrow">EcoTrack</p>
+            <h1>{copy.auth.title}</h1>
+            <p className="auth-text">{copy.auth.loading}</p>
+          </div>
+        </section>
+        <ImprintFooter copy={copy} />
+      </div>
+    );
   }
 
   function appendChatEntry(current, message) {
@@ -966,6 +1099,25 @@ export default function Page() {
     };
 
     return [entry, ...(current.chatMessages || [])].slice(0, 80);
+  }
+
+  function syncEntriesToConvex(entries) {
+    if (!activeAccount?.backendUserId || !entries.length) {
+      return;
+    }
+
+    addActivityEntries({
+      userId: activeAccount.backendUserId,
+      entries: entries.map((entry) => ({
+        category: entry.category,
+        title: entry.title,
+        points: entry.points,
+        note: entry.note || "",
+        createdAt: new Date(entry.createdAt).getTime(),
+      })),
+    }).catch((error) => {
+      console.error("Konnte Aktivitäts-Einträge nicht in Convex speichern.", error);
+    });
   }
 
   function addActivity(activity) {
@@ -996,8 +1148,8 @@ export default function Page() {
         };
       }),
     }));
+    syncEntriesToConvex([entry]);
 
-    setView("dashboard");
     setStatus(copy.status.activityAdded(entry.title, entry.points));
   }
 
@@ -1031,10 +1183,10 @@ export default function Page() {
         };
       }),
     }));
+    syncEntriesToConvex(entries);
 
     const totalPoints = entries.reduce((sum, item) => sum + item.points, 0);
     setPendingActivities([]);
-    setView("dashboard");
     setStatus(copy.status.activitiesAdded(entries.length, totalPoints));
   }
 
@@ -1345,14 +1497,20 @@ export default function Page() {
                 <button
                   type="button"
                   className={`pill-button${language === "de" ? " active" : ""}`}
-                  onClick={() => setLanguage("de")}
+                  onClick={() => {
+                    setLanguage("de");
+                    setStatus(COPY.de.status.loginFirst);
+                  }}
                 >
                   Deutsch
                 </button>
                 <button
                   type="button"
                   className={`pill-button${language === "en" ? " active" : ""}`}
-                  onClick={() => setLanguage("en")}
+                  onClick={() => {
+                    setLanguage("en");
+                    setStatus(COPY.en.status.loginFirst);
+                  }}
                 >
                   English
                 </button>
@@ -1378,25 +1536,25 @@ export default function Page() {
 
           <div className="auth-card">
             {authMode === "register" ? (
-              <form className="stack" onSubmit={handleRegister}>
+              <form className="stack" onSubmit={handleRegister} noValidate>
                 <label>
-                  {copy.auth.fullName}
+                  <span className="field-label">{copy.auth.fullName}<RequiredHint text={copy.auth.requiredField} /></span>
                   <input name="name" type="text" maxLength="40" required />
                 </label>
                 <label>
-                  {copy.auth.email}
+                  <span className="field-label">{copy.auth.email}<RequiredHint text={copy.auth.requiredField} /></span>
                   <input name="email" type="email" maxLength="80" required />
                 </label>
                 <label>
-                  {copy.auth.city}
+                  <span className="field-label">{copy.auth.city}<RequiredHint text={copy.auth.requiredField} /></span>
                   <input name="city" type="text" maxLength="40" required />
                 </label>
                 <label>
-                  {copy.auth.age}
-                  <input name="age" type="number" min="16" max="99" required />
+                  <span className="field-label">{copy.auth.age}<RequiredHint text={copy.auth.requiredField} /></span>
+                  <input name="age" type="number" min="0" max="99" required />
                 </label>
                 <label>
-                  {copy.auth.password}
+                  <span className="field-label">{copy.auth.password}<RequiredHint text={copy.auth.requiredField} /></span>
                   <input
                     name="password"
                     type={showPassword ? "text" : "password"}
@@ -1418,13 +1576,13 @@ export default function Page() {
                 </button>
               </form>
             ) : (
-              <form className="stack" onSubmit={handleLogin}>
+              <form className="stack" onSubmit={handleLogin} noValidate>
                 <label>
-                  {copy.auth.email}
+                  <span className="field-label">{copy.auth.email}<RequiredHint text={copy.auth.requiredField} /></span>
                   <input name="email" type="email" maxLength="80" required />
                 </label>
                 <label>
-                  {copy.auth.password}
+                  <span className="field-label">{copy.auth.password}<RequiredHint text={copy.auth.requiredField} /></span>
                   <input
                     name="password"
                     type={showPassword ? "text" : "password"}
@@ -1449,6 +1607,7 @@ export default function Page() {
             <p className="status-message auth-status">{status}</p>
           </div>
         </section>
+        <ImprintFooter copy={copy} />
       </div>
     );
   }
@@ -1623,6 +1782,7 @@ export default function Page() {
 
         {view === "survey" && <SurveyPanel copy={copy} />}
       </main>
+      <ImprintFooter copy={copy} />
     </div>
   );
 }
@@ -1642,7 +1802,7 @@ function SustainabilityPanel({ copy }) {
           <h3>{copy.sustainability.goalTitle}</h3>
           <p>{copy.sustainability.goalBody}</p>
           <div className="goal-visual" aria-hidden="true">
-            <img className="feature-image feature-leaf" src={withBasePath("/monstera-blatt-l.jpg")} alt="" />
+            <img className="feature-image feature-leaf" src={withBasePath("/monstera-blatt-l.jpg")} alt="" draggable={false} />
           </div>
         </article>
         <article className="info-card feature-card">
@@ -1653,6 +1813,7 @@ function SustainabilityPanel({ copy }) {
               className="feature-image feature-community"
               src={withBasePath("/Nachhaltigkeits_Community.jpeg")}
               alt=""
+              draggable={false}
             />
           </div>
         </article>
@@ -1755,6 +1916,7 @@ function StudentPhoto({ copy }) {
           src={photoCandidates[photoIndex]}
           alt="Jens und David am See"
           onError={handleImageError}
+          draggable={false}
         />
       ) : (
         <div className="student-photo-placeholder">
@@ -2485,7 +2647,7 @@ function SettingsPanel({
           </label>
           <label>
             {copy.auth.age}
-            <input name="age" type="number" min="16" max="99" defaultValue={account.age} required />
+            <input name="age" type="number" min="0" max="99" defaultValue={account.age} required />
           </label>
           <button type="submit" className="primary-button small-button">
             {copy.settings.saveProfile}
@@ -2499,14 +2661,20 @@ function SettingsPanel({
               <button
                 type="button"
                 className={`pill-button${language === "de" ? " active" : ""}`}
-                onClick={() => setLanguage("de")}
+                onClick={() => {
+                  setLanguage("de");
+                  setStatus(COPY.de.status.signedIn);
+                }}
               >
                 Deutsch
               </button>
               <button
                 type="button"
                 className={`pill-button${language === "en" ? " active" : ""}`}
-                onClick={() => setLanguage("en")}
+                onClick={() => {
+                  setLanguage("en");
+                  setStatus(COPY.en.status.signedIn);
+                }}
               >
                 English
               </button>
@@ -2631,6 +2799,44 @@ function SurveyPanel({ copy }) {
   );
 }
 
+function openImprintWindow(copy) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const popup = window.open("", "ecotrack-imprint", "noopener,noreferrer,width=760,height=860");
+  if (!popup) {
+    return;
+  }
+
+  popup.document.title = copy.imprint.title;
+  popup.document.body.innerHTML = `
+    <main style="font-family: Avenir Next, Segoe UI, Trebuchet MS, sans-serif; margin: 2rem auto; max-width: 760px; line-height: 1.5; color: #122019; padding: 0 1rem;">
+      <h1 style="margin: 0 0 1rem; font-size: 1.8rem;">${copy.imprint.title}</h1>
+      <p style="margin: 0;">${copy.imprint.body}</p>
+    </main>
+  `;
+}
+
+function ImprintFooter({ copy }) {
+  return (
+    <footer className="app-footer">
+      <button type="button" className="footer-link" onClick={() => openImprintWindow(copy)}>
+        {copy.imprint.label}
+      </button>
+    </footer>
+  );
+}
+
+function RequiredHint({ text }) {
+  return (
+    <details className="required-hint">
+      <summary title={text}>!</summary>
+      <span>{text}</span>
+    </details>
+  );
+}
+
 function BarChart({ items }) {
   const maxValue = Math.max(...items.map((item) => item.value), 1);
 
@@ -2737,24 +2943,61 @@ function parseStorage(key) {
       return null;
     }
 
-    return {
-      accounts: parsed.accounts.map(normalizeAccount),
-      activeAccountId: parsed.activeAccountId || null,
-      chatMessages: Array.isArray(parsed.chatMessages) ? parsed.chatMessages.map(normalizeChatMessage) : [],
-      customProposals: Array.isArray(parsed.customProposals)
-        ? parsed.customProposals.map(normalizeProposal)
-        : [],
-      activityRequests: Array.isArray(parsed.activityRequests)
-        ? parsed.activityRequests.map(normalizeActivityRequest)
-        : [],
-      approvedActivities: Array.isArray(parsed.approvedActivities)
-        ? parsed.approvedActivities.map(normalizeApprovedActivity)
-        : [],
-    };
+    return normalizeStoredState(parsed);
   } catch (error) {
     console.warn("Konnte gespeicherte Daten nicht lesen.", error);
     return null;
   }
+}
+
+function buildCatalogItems(approvedActivities = []) {
+  const baseItems = Object.entries(SUGGESTIONS).flatMap(([category, items]) =>
+    items.map((item) => ({
+      key: `${category}:${item.title}`.toLowerCase().trim(),
+      title: item.title,
+      category,
+      defaultPoints: Number(item.points) || 0,
+      note: item.note || "",
+      isSystem: true,
+    })),
+  );
+
+  const customItems = approvedActivities.map((item) => ({
+    key: `${item.category}:${item.title}`.toLowerCase().trim(),
+    title: item.title,
+    category: item.category || "custom",
+    defaultPoints: Number(item.points) || 0,
+    note: item.note || "",
+    isSystem: false,
+  }));
+
+  const map = new Map();
+  for (const item of [...baseItems, ...customItems]) {
+    map.set(item.key, item);
+  }
+
+  return [...map.values()];
+}
+
+function normalizeStoredState(parsed) {
+  if (!parsed || !Array.isArray(parsed.accounts)) {
+    return IS_DEV_BUILD ? ensureSeedData(EMPTY_STATE) : EMPTY_STATE;
+  }
+
+  return {
+    accounts: parsed.accounts.map(normalizeAccount),
+    activeAccountId: parsed.activeAccountId || null,
+    chatMessages: Array.isArray(parsed.chatMessages) ? parsed.chatMessages.map(normalizeChatMessage) : [],
+    customProposals: Array.isArray(parsed.customProposals)
+      ? parsed.customProposals.map(normalizeProposal)
+      : [],
+    activityRequests: Array.isArray(parsed.activityRequests)
+      ? parsed.activityRequests.map(normalizeActivityRequest)
+      : [],
+    approvedActivities: Array.isArray(parsed.approvedActivities)
+      ? parsed.approvedActivities.map(normalizeApprovedActivity)
+      : [],
+  };
 }
 
 function normalizeAccount(account) {
@@ -2764,6 +3007,7 @@ function normalizeAccount(account) {
 
   return {
     id: account.id || crypto.randomUUID(),
+    backendUserId: account.backendUserId || null,
     name: account.name || "Unbekannt",
     email: account.email || `${(account.name || "user").toLowerCase().replace(/\s+/g, ".")}@local.app`,
     city: account.city || "Unbekannt",
@@ -2771,6 +3015,20 @@ function normalizeAccount(account) {
     password: account.password || "demo1234",
     createdAt: account.createdAt || new Date().toISOString(),
     activities,
+  };
+}
+
+function mapUserToAccount(user) {
+  return {
+    id: user._id,
+    backendUserId: user._id,
+    name: user.name || "Unbekannt",
+    email: user.email || "unknown@local.app",
+    city: user.city || "Unbekannt",
+    age: user.age || "18",
+    password: user.password || "",
+    createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString(),
+    activities: [],
   };
 }
 
@@ -2851,6 +3109,7 @@ function getActiveAccount(appState) {
 function createObserverAccount(copy) {
   return {
     id: "observer-view",
+    backendUserId: null,
     name: copy.auth.observerLabel,
     email: "",
     city: "",
@@ -3064,6 +3323,22 @@ function getLevelName(level) {
 
 function getCategoryLabel(category, language = "de") {
   return CATEGORY_LABELS[category]?.[language] || CATEGORY_LABELS.custom[language];
+}
+
+function localizeActivityForLanguage(item, language = "de") {
+  if (language !== "en") {
+    return item;
+  }
+
+  const translation = ACTIVITY_EN_OVERRIDES[item.category]?.[item.title];
+  if (!translation) {
+    return item;
+  }
+
+  return {
+    ...item,
+    title: translation,
+  };
 }
 
 function getFeedbackCategoryLabel(category, language = "de", copy = COPY[language]) {

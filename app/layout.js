@@ -1,4 +1,5 @@
 import "./globals.css";
+import ConvexClientProvider from "./convex-client-provider";
 
 export const metadata = {
   title: "EcoTrack",
@@ -8,7 +9,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body>
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
     </html>
   );
 }
