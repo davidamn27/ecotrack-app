@@ -250,7 +250,7 @@ const COPY = {
     imprint: {
       label: "Impressum",
       title: "Impressum",
-      body: "Bitte Impressumstext hier ergänzen.",
+      body: "Das vollständige Impressum ist über den Footer-Link aufrufbar.",
     },
     chat: {
       eyebrow: "Community",
@@ -494,7 +494,7 @@ const COPY = {
     imprint: {
       label: "Legal Notice",
       title: "Legal Notice",
-      body: "Please add the legal notice text here.",
+      body: "The full legal notice is available via the footer link.",
     },
     chat: {
       eyebrow: "Community",
