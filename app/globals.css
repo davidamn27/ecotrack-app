@@ -817,7 +817,7 @@ select:focus {
   display: grid;
   gap: 0.55rem;
   margin-top: 0.9rem;
-  max-height: 16.5rem;
+  max-height: 5.25rem;
   overflow: auto;
   padding-right: 0.2rem;
 }

@@ -604,39 +604,51 @@ const SUGGESTIONS = {
 
 const ACTIVITY_EN_OVERRIDES = {
   mobility: {
-    "Mit dem Fahrrad zur Arbeit": "Bike to work",
-    "Zu Fuß zur Arbeit": "Walk to work",
-    "Öffentliche Verkehrsmittel genutzt": "Used public transport",
-    "Fahrgemeinschaft organisiert": "Organized carpooling",
-    "Home Office statt Pendeln": "Worked from home instead of commuting",
-    "Kurze Strecke ohne Auto": "Short trip without car",
-    "E-Bike statt Auto genutzt": "Used e-bike instead of car",
+    "Mit dem Fahrrad zur Arbeit": { title: "Bike to work", note: "Bike to work." },
+    "Zu Fuß zur Arbeit": { title: "Walk to work", note: "Walk to work." },
+    "Öffentliche Verkehrsmittel genutzt": { title: "Used public transport", note: "Use public transport." },
+    "Fahrgemeinschaft organisiert": { title: "Organized carpooling", note: "Organized carpooling." },
+    "Home Office statt Pendeln": { title: "Worked from home instead of commuting", note: "Saves the full commute." },
+    "Kurze Strecke ohne Auto": { title: "Short trip without car", note: "Short trip without car under 5 km." },
+    "E-Bike statt Auto genutzt": { title: "Used e-bike instead of car", note: "Used e-bike instead of car." },
   },
   nutrition: {
-    "Vegetarisch gegessen": "Ate vegetarian",
-    "Vegan gegessen": "Ate vegan",
-    "Selbst gekocht": "Cooked at home",
-    "Reste verwertet": "Used leftovers",
-    "Leitungswasser statt Flaschenwasser": "Drank tap water instead of bottled water",
-    "Regionale Produkte gekauft": "Bought regional products",
-    "Lebensmittel vor Verschwendung gerettet": "Saved food from waste",
+    "Vegetarisch gegessen": { title: "Ate vegetarian", note: "Ate a vegetarian meal." },
+    "Vegan gegessen": { title: "Ate vegan", note: "Ate a vegan meal." },
+    "Selbst gekocht": { title: "Cooked at home", note: "Cooked at home." },
+    "Reste verwertet": { title: "Used leftovers", note: "Used leftovers." },
+    "Leitungswasser statt Flaschenwasser": {
+      title: "Drank tap water instead of bottled water",
+      note: "Drank tap water instead of bottled water.",
+    },
+    "Regionale Produkte gekauft": { title: "Bought regional products", note: "Bought regional products." },
+    "Lebensmittel vor Verschwendung gerettet": { title: "Saved food from waste", note: "Saved food from waste." },
   },
   household: {
-    "Duschzeit reduziert": "Reduced shower time",
-    "Waschmaschine voll beladen genutzt": "Used fully loaded washing machine",
-    "Wäsche luftgetrocknet": "Air-dried laundry",
-    "Geschirrspüler im Eco-Modus": "Used dishwasher eco mode",
-    "Standby-Geräte ausgeschaltet": "Switched off standby devices",
-    "Heizung gesenkt": "Lowered heating",
-    "Licht ausgeschaltet, wenn nicht nötig": "Switched off lights when not needed",
+    "Duschzeit reduziert": { title: "Reduced shower time", note: "Reduced shower time." },
+    "Waschmaschine voll beladen genutzt": {
+      title: "Used fully loaded washing machine",
+      note: "Used a fully loaded washing machine.",
+    },
+    "Wäsche luftgetrocknet": { title: "Air-dried laundry", note: "Air-dried laundry instead of using a dryer." },
+    "Geschirrspüler im Eco-Modus": { title: "Used dishwasher eco mode", note: "Used dishwasher eco mode." },
+    "Standby-Geräte ausgeschaltet": { title: "Switched off standby devices", note: "Switched off standby devices." },
+    "Heizung gesenkt": { title: "Lowered heating", note: "Lowered heating temperature." },
+    "Licht ausgeschaltet, wenn nicht nötig": {
+      title: "Switched off lights when not needed",
+      note: "Switched off lights when not needed.",
+    },
   },
   custom: {
-    "Second-Hand-Produkt gekauft": "Bought second-hand product",
-    "Kleidung repariert": "Repaired clothing",
-    "Elektronisches Gerät repariert": "Repaired electronic device",
-    "Wiederverwendbare Produkte genutzt": "Used reusable products",
-    "Baum oder Pflanze gesetzt": "Planted a tree or plant",
-    "An Nachhaltigkeits-Event teilgenommen": "Joined a sustainability event",
+    "Second-Hand-Produkt gekauft": { title: "Bought second-hand product", note: "Bought a second-hand product." },
+    "Kleidung repariert": { title: "Repaired clothing", note: "Repaired clothing." },
+    "Elektronisches Gerät repariert": { title: "Repaired electronic device", note: "Repaired an electronic device." },
+    "Wiederverwendbare Produkte genutzt": { title: "Used reusable products", note: "Used reusable products." },
+    "Baum oder Pflanze gesetzt": { title: "Planted a tree or plant", note: "Planted a tree or plant." },
+    "An Nachhaltigkeits-Event teilgenommen": {
+      title: "Joined a sustainability event",
+      note: "Participated in a sustainability event.",
+    },
   },
 };
 
@@ -2809,13 +2821,100 @@ function openImprintWindow(copy) {
     return;
   }
 
-  popup.document.title = copy.imprint.title;
-  popup.document.body.innerHTML = `
-    <main style="font-family: Avenir Next, Segoe UI, Trebuchet MS, sans-serif; margin: 2rem auto; max-width: 760px; line-height: 1.5; color: #122019; padding: 0 1rem;">
-      <h1 style="margin: 0 0 1rem; font-size: 1.8rem;">${copy.imprint.title}</h1>
-      <p style="margin: 0;">${copy.imprint.body}</p>
-    </main>
-  `;
+  popup.document.open();
+  popup.document.write(`
+    <!doctype html>
+    <html lang="de">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${copy.imprint.title}</title>
+        <style>
+          :root {
+            --bg: #000a2b;
+            --ink: #f1f4ff;
+            --muted: #c5ceef;
+            --link: #7f93ff;
+          }
+          * { box-sizing: border-box; }
+          html, body { margin: 0; padding: 0; }
+          body {
+            background: radial-gradient(circle at top, #0a1a56 0%, var(--bg) 45%);
+            color: var(--ink);
+            font-family: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+            line-height: 1.6;
+          }
+          main {
+            width: min(980px, calc(100% - 2rem));
+            margin: 0 auto;
+            padding: 2.2rem 0 3rem;
+            text-align: center;
+          }
+          h1 {
+            margin: 0 0 1.6rem;
+            font-size: clamp(1.8rem, 3.5vw, 2.3rem);
+          }
+          h2 {
+            margin: 2.1rem 0 0.7rem;
+            font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+          }
+          p { margin: 0.45rem 0; font-size: clamp(1.02rem, 2.2vw, 1.15rem); color: var(--muted); }
+          .brand { color: #7f93ff; font-weight: 800; margin-bottom: 1.3rem; }
+          a { color: var(--link); text-decoration: none; }
+          a:hover { text-decoration: underline; }
+          .spacer { height: 1.2rem; }
+          .home-link { display: inline-block; margin-top: 2.2rem; font-weight: 700; }
+        </style>
+      </head>
+      <body>
+        <main>
+          <p class="brand">EcoTrack</p>
+          <h1>Impressum</h1>
+
+          <h2>Angaben gemaess § 5 TMG</h2>
+          <p>EcoTrack (studentisches Projekt)</p>
+          <p>88630 Pfullendorf</p>
+
+          <h2>Vertreten durch</h2>
+          <p>Projektteam: Jens Ammann und David Ammann</p>
+
+          <h2>Kontakt</h2>
+          <p>E-Mail: <a href="mailto:davidammann@web.de">davidammann@web.de</a></p>
+
+          <h2>Verantwortlich fuer den Inhalt nach § 55 Abs. 2 RStV</h2>
+          <p>David Ammann</p>
+          <p>88630 Pfullendorf</p>
+
+          <h2>Streitschlichtung</h2>
+          <p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+          <h2>Haftung fuer Inhalte</h2>
+          <p>Als Diensteanbieter sind wir gemaess § 7 Abs. 1 TMG fuer eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.</p>
+          <p>Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, uebermittelte oder gespeicherte fremde Informationen zu ueberwachen.</p>
+
+          <h2>Haftung fuer Links</h2>
+          <p>Unser Angebot enthaelt Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben.</p>
+          <p>Fuer die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.</p>
+
+          <h2>Urheberrecht</h2>
+          <p>Die durch die Seitenbetreiber erstellten Inhalte und Werke unterliegen dem deutschen Urheberrecht.</p>
+          <p>Downloads und Kopien sind nur fuer den privaten, nicht kommerziellen Gebrauch gestattet.</p>
+
+          <h2>Datenschutz</h2>
+          <p>Wir behandeln personenbezogene Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften.</p>
+
+          <h2>Cookies</h2>
+          <p>Diese Website verwendet teilweise Cookies. Cookies richten auf Ihrem Rechner keinen Schaden an und enthalten keine Viren.</p>
+
+          <h2>Widerspruch Werbe-Mails</h2>
+          <p>Der Nutzung der im Rahmen der Impressumspflicht veroeffentlichten Kontaktdaten zur Uebersendung von Werbung wird hiermit widersprochen.</p>
+
+          <a class="home-link" href="#" onclick="window.close(); return false;">Zurueck zur EcoTrack App</a>
+        </main>
+      </body>
+    </html>
+  `);
+  popup.document.close();
 }
 
 function ImprintFooter({ copy }) {
@@ -3337,7 +3436,8 @@ function localizeActivityForLanguage(item, language = "de") {
 
   return {
     ...item,
-    title: translation,
+    title: translation.title,
+    note: translation.note || item.note,
   };
 }
 
