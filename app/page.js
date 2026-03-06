@@ -13,34 +13,6 @@ const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const IS_DEV_BUILD = process.env.NODE_ENV !== "production";
 const TEST_USER_ID = "demo-power-user";
 
-const LEVEL_NAMES = [
-  "Starter",
-  "Scout",
-  "Mover",
-  "Impact",
-  "Leader",
-  "Visionary",
-  "Trailblazer",
-  "Guardian",
-  "Pioneer",
-  "Catalyst",
-  "Explorer",
-  "Mentor",
-  "Architect",
-  "Steward",
-  "Champion",
-  "Shaper",
-  "Navigator",
-  "Innovator",
-  "Beacon",
-  "Summit",
-  "Legacy",
-  "Momentum",
-  "Horizon",
-  "Evergreen",
-  "Earthkeeper",
-];
-
 function withBasePath(path) {
   return `${BASE_PATH}${path}`;
 }
@@ -2181,6 +2153,12 @@ function LevelTree({ levelStats, copy }) {
         <div className="tree-canopy canopy-back" style={growth.canopyBackStyle} />
         <div className="tree-canopy canopy-mid" style={growth.canopyMidStyle} />
         <div className="tree-canopy canopy-front" style={growth.canopyFrontStyle} />
+        {growth.leafClusters.map((leaf) => (
+          <span key={leaf.id} className="tree-leaf" style={leaf.style} />
+        ))}
+        {growth.fruits.map((fruit) => (
+          <span key={fruit.id} className="tree-fruit" style={fruit.style} />
+        ))}
         <div className="tree-trunk" style={growth.trunkStyle}>
           <div className="tree-branches" style={growth.branchStyle} />
         </div>
@@ -3295,10 +3273,11 @@ function getProposalAverage(proposal) {
 }
 
 function getLevelStats(totalPoints) {
+  const normalizedTotalPoints = Math.max(0, Math.floor(parsePointValue(totalPoints)));
   const pointsPerLevel = 100;
-  const level = Math.floor(totalPoints / pointsPerLevel) + 1;
+  const level = Math.floor(normalizedTotalPoints / pointsPerLevel) + 1;
   const nextThreshold = level * pointsPerLevel;
-  const progressInLevel = totalPoints % pointsPerLevel;
+  const progressInLevel = normalizedTotalPoints % pointsPerLevel;
   const progressPercent = Math.max(
     0,
     Math.min(100, Math.round((progressInLevel / pointsPerLevel) * 100)),
@@ -3308,18 +3287,53 @@ function getLevelStats(totalPoints) {
     level,
     nextThreshold,
     progressPercent,
-    pointsToNext: nextThreshold - totalPoints,
+    pointsToNext: nextThreshold - normalizedTotalPoints,
     currentLabel: getLevelName(level),
     nextLabel: getLevelName(level + 1),
   };
 }
 
-function getLevelName(level) {
-  if (level <= LEVEL_NAMES.length) {
-    return LEVEL_NAMES[level - 1];
+function parsePointValue(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
   }
 
-  return `Elite ${level}`;
+  if (typeof value !== "string") {
+    return 0;
+  }
+
+  const raw = value.trim();
+  if (!raw) {
+    return 0;
+  }
+
+  const cleaned = raw.replace(/[^\d.,-]/g, "");
+  if (!cleaned) {
+    return 0;
+  }
+
+  let normalized = cleaned;
+
+  if (normalized.includes(".") && normalized.includes(",")) {
+    if (normalized.lastIndexOf(",") > normalized.lastIndexOf(".")) {
+      normalized = normalized.replace(/\./g, "").replace(",", ".");
+    } else {
+      normalized = normalized.replace(/,/g, "");
+    }
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(normalized)) {
+    normalized = normalized.replace(/\./g, "");
+  } else if (/^\d{1,3}(,\d{3})+$/.test(normalized)) {
+    normalized = normalized.replace(/,/g, "");
+  } else {
+    normalized = normalized.replace(",", ".");
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getLevelName(level) {
+  return `Level ${Math.max(1, Math.floor(level))}`;
 }
 
 function getCategoryLabel(category, language = "de") {
@@ -3354,22 +3368,65 @@ function getFeedbackCategoryLabel(category, language = "de", copy = COPY[languag
 function getTreeGrowth(levelStats, copy) {
   const level = levelStats.level;
   const progress = levelStats.progressPercent;
-  const rootProgress = level === 1 ? Math.max(0.25, progress / 100) : 1;
-  const trunkProgress = level === 1 ? 0.18 : level === 2 ? Math.max(0.2, progress / 100) : 1;
-  const canopyTier = Math.max(0, level - 2);
-  const canopyFront = canopyTier >= 1 ? 1 : 0;
-  const canopyMid = canopyTier >= 2 ? 1 : canopyTier === 1 ? Math.max(0.35, progress / 100) : 0;
-  const canopyBack = canopyTier >= 3 ? 1 : canopyTier === 2 ? Math.max(0.35, progress / 100) : 0;
-  const branchVisible = level >= 3 ? 1 : level === 2 ? Math.max(0.25, progress / 100) : 0;
+  const levelProgress = Math.max(0, level - 1 + progress / 100);
+  const maturity = Math.max(0, Math.min(1, levelProgress / 20));
+  const rootProgress = 0.28 + maturity * 0.72;
+  const trunkHeight = Math.min(150, 40 + levelProgress * 4.2);
+  const branchVisible = Math.max(0.2, Math.min(1, 0.15 + maturity * 0.95));
+  const canopyScale = 0.62 + maturity * 0.78;
+  const canopyFront = Math.max(0.2, Math.min(1, 0.2 + maturity * 0.8));
+  const canopyMid = Math.max(0.12, Math.min(1, 0.12 + maturity * 0.88));
+  const canopyBack = Math.max(0.08, Math.min(1, 0.08 + maturity * 0.92));
+  const leafCount = Math.min(14, 3 + Math.floor(levelProgress / 1.8));
+  const fruitCount = Math.min(7, Math.max(0, Math.floor((levelProgress - 5) / 3)));
 
   let stageLabel = "";
-  if (level === 1) {
+  if (levelProgress < 1.5) {
     stageLabel = copy.activity.treeStageRoots(progress);
-  } else if (level === 2) {
+  } else if (levelProgress < 3.5) {
     stageLabel = copy.activity.treeStageTrunk(progress);
   } else {
     stageLabel = copy.activity.treeStageCrown(level);
   }
+
+  const leafClusters = Array.from({ length: leafCount }, (_, index) => {
+    const ratio = leafCount > 1 ? index / (leafCount - 1) : 0;
+    const angle = Math.PI * (0.12 + ratio * 0.76);
+    const distanceX = 58 + maturity * 34;
+    const distanceY = 20 + maturity * 18;
+    const x = Math.cos(angle) * distanceX;
+    const y = Math.sin(angle) * distanceY;
+    const size = Math.round(12 + maturity * 13 + (index % 3));
+
+    return {
+      id: `leaf-${index}`,
+      style: {
+        left: `calc(50% + ${x}px)`,
+        bottom: `${130 + y}px`,
+        width: `${size}px`,
+        height: `${size}px`,
+        opacity: 0.3 + maturity * 0.65,
+      },
+    };
+  });
+
+  const fruits = Array.from({ length: fruitCount }, (_, index) => {
+    const ratio = fruitCount > 1 ? index / (fruitCount - 1) : 0.5;
+    const x = -40 + ratio * 80;
+    const y = 146 + ((index + level) % 3) * 10;
+    const size = 7 + ((index + level) % 2);
+
+    return {
+      id: `fruit-${index}`,
+      style: {
+        left: `calc(50% + ${x}px)`,
+        bottom: `${y}px`,
+        width: `${size}px`,
+        height: `${size}px`,
+        opacity: 0.55 + maturity * 0.45,
+      },
+    };
+  });
 
   return {
     rootStyle: {
@@ -3377,7 +3434,7 @@ function getTreeGrowth(levelStats, copy) {
       transform: `scaleX(${0.55 + rootProgress * 0.45})`,
     },
     trunkStyle: {
-      height: `${36 + trunkProgress * 72}px`,
+      height: `${trunkHeight}px`,
     },
     branchStyle: {
       opacity: branchVisible,
@@ -3385,16 +3442,18 @@ function getTreeGrowth(levelStats, copy) {
     },
     canopyFrontStyle: {
       opacity: canopyFront,
-      transform: `scale(${0.65 + canopyFront * 0.35})`,
+      transform: `translateX(-50%) scale(${canopyScale})`,
     },
     canopyMidStyle: {
       opacity: canopyMid,
-      transform: `scale(${0.55 + canopyMid * 0.45})`,
+      transform: `translateX(-50%) scale(${canopyScale * 1.08})`,
     },
     canopyBackStyle: {
       opacity: canopyBack,
-      transform: `scale(${0.45 + canopyBack * 0.55})`,
+      transform: `translateX(-50%) scale(${canopyScale * 1.16})`,
     },
+    leafClusters,
+    fruits,
     stageLabel,
   };
 }

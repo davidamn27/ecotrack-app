@@ -647,6 +647,27 @@ select:focus {
     inset 8px 10px 16px rgba(246, 252, 239, 0.35);
 }
 
+.tree-leaf,
+.tree-fruit {
+  position: absolute;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 220ms ease, width 220ms ease, height 220ms ease, left 220ms ease, bottom 220ms ease;
+}
+
+.tree-leaf {
+  background: radial-gradient(circle at 32% 28%, #f2fbe8, #8fcd76 58%, #2d7b4a);
+  box-shadow:
+    inset -3px -5px 7px rgba(37, 96, 57, 0.3),
+    inset 3px 3px 6px rgba(240, 252, 232, 0.26);
+}
+
+.tree-fruit {
+  background: radial-gradient(circle at 34% 30%, #fff8cf, #f3b54e 62%, #d5862e);
+  box-shadow: 0 1px 3px rgba(98, 58, 20, 0.35);
+}
+
 .canopy-front {
   bottom: 96px;
   width: 82px;
