@@ -847,7 +847,7 @@ export default function Page() {
   const activityRequests = appState.activityRequests || [];
   const approvedActivities = appState.approvedActivities || [];
   const categorySuggestions = [
-    ...SUGGESTIONS[selectedCategory],
+    ...SUGGESTIONS[selectedCategory].map((item) => ({ ...item, category: selectedCategory })),
     ...approvedActivities.filter((item) => item.category === selectedCategory),
   ].map((item) => localizeActivityForLanguage(item, language));
 
