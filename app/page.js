@@ -3425,26 +3425,7 @@ function getTreeGrowth(levelStats, copy) {
     stageLabel = copy.activity.treeStageCrown(level);
   }
 
-  const leafClusters = Array.from({ length: leafCount }, (_, index) => {
-    const ratio = leafCount > 1 ? index / (leafCount - 1) : 0;
-    const angle = Math.PI * (0.12 + ratio * 0.76);
-    const distanceX = 58 + maturity * 34;
-    const distanceY = 20 + maturity * 18;
-    const x = Math.cos(angle) * distanceX;
-    const y = Math.sin(angle) * distanceY;
-    const size = Math.round(12 + maturity * 13 + (index % 3));
-
-    return {
-      id: `leaf-${index}`,
-      style: {
-        left: `calc(50% + ${x}px)`,
-        bottom: `${130 + y}px`,
-        width: `${size}px`,
-        height: `${size}px`,
-        opacity: 0.3 + maturity * 0.65,
-      },
-    };
-  });
+  const leafClusters = [];
 
   const fruits = Array.from({ length: fruitCount }, (_, index) => {
     const ratio = fruitCount > 1 ? index / (fruitCount - 1) : 0.5;
