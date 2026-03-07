@@ -1937,6 +1937,12 @@ function ActivityPanel({
 }) {
   const suggestions = categorySuggestions;
   const pendingTotalPoints = pendingActivities.reduce((sum, item) => sum + item.points, 0);
+  const [treePreviewMode, setTreePreviewMode] = useState("off");
+  const parsedCurrentPoints = parsePointValue(stats.totalPoints);
+  const previewTargetPoints = treePreviewMode === "full"
+    ? Math.max(5000, parsedCurrentPoints)
+    : Math.max(1800, parsedCurrentPoints);
+  const displayedLevelStats = treePreviewMode === "off" ? levelStats : getLevelStats(previewTargetPoints);
 
   return (
     <section className="panel activity-panel">
@@ -1955,24 +1961,54 @@ function ActivityPanel({
               <div>
                 <p className="eyebrow">{copy.activity.level}</p>
                 <h3 className="subhead">
-                  {activeAccount.name}: {copy.activity.level} {levelStats.level}
+                  {activeAccount.name}: {copy.activity.level} {displayedLevelStats.level}
                 </h3>
               </div>
               <p className="level-points">{stats.totalPoints} {copy.dashboard.points}</p>
             </div>
             <p className="level-copy">
-              {copy.activity.levelProgress(levelStats.pointsToNext, levelStats.nextLabel, levelStats.nextThreshold)}
+              {copy.activity.levelProgress(
+                displayedLevelStats.pointsToNext,
+                displayedLevelStats.nextLabel,
+                displayedLevelStats.nextThreshold,
+              )}
             </p>
             <div className="level-track" aria-label="Fortschritt zum nächsten Level">
-              <div className="level-fill" style={{ width: `${levelStats.progressPercent}%` }} />
+              <div className="level-fill" style={{ width: `${displayedLevelStats.progressPercent}%` }} />
             </div>
             <div className="level-meta">
-              <p>{levelStats.progressPercent}% {copy.activity.progress}</p>
+              <p>{displayedLevelStats.progressPercent}% {copy.activity.progress}</p>
               <p>{copy.activity.today}: {stats.dayTotal}</p>
               <p>{copy.activity.week}: {stats.weekTotal}</p>
             </div>
+            {IS_DEV_BUILD ? (
+              <div className="preview-actions">
+                <button
+                  type="button"
+                  className="secondary-button small-button"
+                  onClick={() =>
+                    setTreePreviewMode((current) => (current === "fruit" ? "off" : "fruit"))
+                  }
+                >
+                  {treePreviewMode === "fruit" ? "Frucht-Vorschau beenden" : "Baum mit Früchten anzeigen"}
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button small-button"
+                  onClick={() =>
+                    setTreePreviewMode((current) => (current === "full" ? "off" : "full"))
+                  }
+                >
+                  {treePreviewMode === "full" ? "Final-Vorschau beenden" : "Finalen Baum anzeigen"}
+                </button>
+              </div>
+            ) : null}
           </div>
-          <LevelTree levelStats={levelStats} copy={copy} />
+          <LevelTree
+            levelStats={displayedLevelStats}
+            copy={copy}
+            variant={treePreviewMode === "full" ? "full" : "normal"}
+          />
         </div>
       </section>
 

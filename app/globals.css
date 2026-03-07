@@ -497,6 +497,13 @@ select:focus {
   margin-top: 0.85rem;
 }
 
+.preview-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+}
+
 .level-tree-card {
   padding: 0.9rem;
   border-radius: 20px;
@@ -531,6 +538,32 @@ select:focus {
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.95), rgba(232, 243, 222, 0.78) 34%, rgba(212, 227, 213, 0.62) 100%);
+}
+
+.tree-image-layer {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 330px);
+  height: auto;
+  transform: translateX(-50%);
+  transform-origin: center bottom;
+  transition: transform 220ms ease, opacity 220ms ease;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.tree-image-roots {
+  clip-path: polygon(0% 65%, 100% 65%, 100% 100%, 0% 100%);
+}
+
+.tree-image-trunk {
+  clip-path: polygon(20% 34%, 80% 34%, 80% 78%, 20% 78%);
+}
+
+.tree-image-canopy {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 66%, 0% 66%);
 }
 
 .tree-ground {
