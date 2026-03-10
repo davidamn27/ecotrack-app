@@ -6,6 +6,7 @@ import { api } from "../convex/_generated/api";
 
 const STORAGE_KEY = "ecoboard-data-v7";
 const LANGUAGE_KEY = "ecoboard-language-v1";
+const SESSION_ACCOUNT_KEY = "ecoboard-session-account-v1";
 const DEVELOPER_EMAIL = "davidammann@web.de";
 const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
 const LEGACY_STORAGE_KEYS = [];
@@ -778,9 +779,17 @@ export default function Page() {
       return;
     }
 
-    const loaded = remoteAppState?.state
+    const baseState = remoteAppState?.state
       ? normalizeStoredState(remoteAppState.state)
       : loadState();
+    const storedSessionAccountId = getStoredSessionAccountId();
+    const hasStoredSessionAccount = storedSessionAccountId
+      ? baseState.accounts.some((account) => account.id === storedSessionAccountId)
+      : false;
+    const loaded = {
+      ...baseState,
+      activeAccountId: hasStoredSessionAccount ? storedSessionAccountId : null,
+    };
     setAppState(loaded);
     setHasHydratedState(true);
 
@@ -794,7 +803,13 @@ export default function Page() {
       return;
     }
 
-    saveRemoteAppState({ name: "main", state: appState }).catch((error) => {
+    saveRemoteAppState({
+      name: "main",
+      state: {
+        ...appState,
+        activeAccountId: null,
+      },
+    }).catch((error) => {
       console.error("Konnte App-Status nicht in Convex speichern.", error);
     });
   }, [appState, hasHydratedState, saveRemoteAppState]);
@@ -806,6 +821,14 @@ export default function Page() {
 
     window.localStorage.setItem(LANGUAGE_KEY, language);
   }, [language]);
+
+  useEffect(() => {
+    if (!hasHydratedState) {
+      return;
+    }
+
+    setStoredSessionAccountId(appState.activeAccountId || null);
+  }, [appState.activeAccountId, hasHydratedState]);
 
   const activeAccount = getActiveAccount(appState);
   const sessionAccount = activeAccount || (observerMode ? createObserverAccount(copy) : null);
@@ -2962,6 +2985,36 @@ function parseStorage(key) {
   } catch (error) {
     console.warn("Konnte gespeicherte Daten nicht lesen.", error);
     return null;
+  }
+}
+
+function getStoredSessionAccountId() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage.getItem(SESSION_ACCOUNT_KEY);
+  } catch (error) {
+    console.warn("Konnte Session-Account nicht lesen.", error);
+    return null;
+  }
+}
+
+function setStoredSessionAccountId(accountId) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    if (accountId) {
+      window.localStorage.setItem(SESSION_ACCOUNT_KEY, accountId);
+      return;
+    }
+
+    window.localStorage.removeItem(SESSION_ACCOUNT_KEY);
+  } catch (error) {
+    console.warn("Konnte Session-Account nicht speichern.", error);
   }
 }
 
