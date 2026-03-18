@@ -7,6 +7,7 @@ import { api } from "../convex/_generated/api";
 const STORAGE_KEY = "ecoboard-data-v7";
 const LANGUAGE_KEY = "ecoboard-language-v1";
 const SESSION_ACCOUNT_KEY = "ecoboard-session-account-v1";
+const SESSION_VIEW_KEY = "ecoboard-session-view-v1";
 const DEVELOPER_EMAIL = "davidammann@web.de";
 const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
 const LEGACY_STORAGE_KEYS = [];
@@ -606,39 +607,39 @@ const COPY = {
 
 const SUGGESTIONS = {
   mobility: [
-    { title: "Mit dem Fahrrad zur Arbeit", points: 2, note: "Bike to Work." },
-    { title: "Zu Fuß zur Arbeit", points: 3, note: "Walk to Work." },
-    { title: "Öffentliche Verkehrsmittel genutzt", points: 3, note: "Use Public Transport." },
-    { title: "Fahrgemeinschaft organisiert", points: 2, note: "Carpooling." },
+    { title: "Mit dem Fahrrad zur Arbeit", points: 2, note: "Mit dem Fahrrad zur Arbeit." },
+    { title: "Zu Fuß zur Arbeit", points: 3, note: "Zu Fuß zur Arbeit." },
+    { title: "Öffentliche Verkehrsmittel genutzt", points: 3, note: "Öffentliche Verkehrsmittel genutzt." },
+    { title: "Fahrgemeinschaft organisiert", points: 2, note: "Fahrgemeinschaft gebildet." },
     { title: "Home Office statt Pendeln", points: 5, note: "Spart den kompletten Arbeitsweg." },
-    { title: "Kurze Strecke ohne Auto", points: 3, note: "Short Trip Without Car unter 5 km." },
-    { title: "E-Bike statt Auto genutzt", points: 3, note: "Use E-Bike Instead of Car." },
+    { title: "Kurze Strecke ohne Auto", points: 3, note: "Kurze Strecke ohne Auto unter 5 km." },
+    { title: "E-Bike statt Auto genutzt", points: 3, note: "E-Bike statt Auto genutzt." },
   ],
   nutrition: [
-    { title: "Vegetarisch gegessen", points: 3, note: "Eat Vegetarian Meal." },
-    { title: "Vegan gegessen", points: 4, note: "Eat Vegan Meal." },
-    { title: "Selbst gekocht", points: 2, note: "Cook at Home." },
-    { title: "Reste verwertet", points: 3, note: "Use Leftovers." },
-    { title: "Leitungswasser statt Flaschenwasser", points: 2, note: "Drink Tap Water Instead of Bottled." },
-    { title: "Regionale Produkte gekauft", points: 2, note: "Buy Regional Products." },
-    { title: "Lebensmittel vor Verschwendung gerettet", points: 5, note: "Save Food from Waste." },
+    { title: "Vegetarisch gegessen", points: 3, note: "Vegetarische Mahlzeit gegessen." },
+    { title: "Vegan gegessen", points: 4, note: "Vegane Mahlzeit gegessen." },
+    { title: "Selbst gekocht", points: 2, note: "Selbst gekocht." },
+    { title: "Reste verwertet", points: 3, note: "Reste sinnvoll verwertet." },
+    { title: "Leitungswasser statt Flaschenwasser", points: 2, note: "Leitungswasser statt Flaschenwasser getrunken." },
+    { title: "Regionale Produkte gekauft", points: 2, note: "Regionale Produkte gekauft." },
+    { title: "Lebensmittel vor Verschwendung gerettet", points: 5, note: "Lebensmittel vor Verschwendung gerettet." },
   ],
   household: [
-    { title: "Duschzeit reduziert", points: 3, note: "Reduce Shower Time." },
-    { title: "Waschmaschine voll beladen genutzt", points: 2, note: "Use Washing Machine Fully Loaded." },
-    { title: "Wäsche luftgetrocknet", points: 3, note: "Air Dry Laundry statt Trockner." },
-    { title: "Geschirrspüler im Eco-Modus", points: 2, note: "Use Dishwasher Eco Mode." },
-    { title: "Standby-Geräte ausgeschaltet", points: 2, note: "Turn Off Standby Devices." },
-    { title: "Heizung gesenkt", points: 4, note: "Lower Heating Temperature." },
-    { title: "Licht ausgeschaltet, wenn nicht nötig", points: 1, note: "Switch Off Lights When Not Needed." },
+    { title: "Duschzeit reduziert", points: 3, note: "Duschzeit reduziert." },
+    { title: "Waschmaschine voll beladen genutzt", points: 2, note: "Waschmaschine voll beladen genutzt." },
+    { title: "Wäsche luftgetrocknet", points: 3, note: "Wäsche luftgetrocknet statt Trockner." },
+    { title: "Geschirrspüler im Eco-Modus", points: 2, note: "Geschirrspüler im Eco-Modus genutzt." },
+    { title: "Standby-Geräte ausgeschaltet", points: 2, note: "Standby-Geräte ausgeschaltet." },
+    { title: "Heizung gesenkt", points: 4, note: "Heizung gesenkt." },
+    { title: "Licht ausgeschaltet, wenn nicht nötig", points: 1, note: "Licht ausgeschaltet, wenn es nicht nötig war." },
   ],
   custom: [
-    { title: "Second-Hand-Produkt gekauft", points: 3, note: "Buy Second Hand Product." },
-    { title: "Kleidung repariert", points: 4, note: "Repair Clothing." },
-    { title: "Elektronisches Gerät repariert", points: 5, note: "Repair Electronic Device." },
-    { title: "Wiederverwendbare Produkte genutzt", points: 2, note: "Use Reusable Products." },
-    { title: "Baum oder Pflanze gesetzt", points: 5, note: "Plant a Tree or Plant." },
-    { title: "An Nachhaltigkeits-Event teilgenommen", points: 4, note: "Participate in Sustainability Event." },
+    { title: "Second-Hand-Produkt gekauft", points: 3, note: "Second-Hand-Produkt gekauft." },
+    { title: "Kleidung repariert", points: 4, note: "Kleidung repariert." },
+    { title: "Elektronisches Gerät repariert", points: 5, note: "Elektronisches Gerät repariert." },
+    { title: "Wiederverwendbare Produkte genutzt", points: 2, note: "Wiederverwendbare Produkte genutzt." },
+    { title: "Baum oder Pflanze gesetzt", points: 5, note: "Baum oder Pflanze gesetzt." },
+    { title: "An Nachhaltigkeits-Event teilgenommen", points: 4, note: "An einem Nachhaltigkeits-Event teilgenommen." },
   ],
 };
 
@@ -704,6 +705,7 @@ const EMPTY_STATE = {
 export default function Page() {
   const [appState, setAppState] = useState(EMPTY_STATE);
   const [hasHydratedState, setHasHydratedState] = useState(false);
+  const [hasRestoredView, setHasRestoredView] = useState(false);
   const [language, setLanguage] = useState("de");
   const [status, setStatus] = useState(COPY.de.status.loginFirst);
   const [authMode, setAuthMode] = useState("register");
@@ -832,6 +834,31 @@ export default function Page() {
     setStoredSessionAccountId(appState.activeAccountId || null);
   }, [appState.activeAccountId, hasHydratedState]);
 
+  useEffect(() => {
+    if (!hasHydratedState || hasRestoredView) {
+      return;
+    }
+
+    if (!appState.activeAccountId) {
+      setHasRestoredView(true);
+      return;
+    }
+
+    const storedView = getStoredSessionView();
+    if (storedView) {
+      setView(storedView);
+    }
+    setHasRestoredView(true);
+  }, [appState.activeAccountId, hasHydratedState, hasRestoredView]);
+
+  useEffect(() => {
+    if (!hasHydratedState || !appState.activeAccountId) {
+      return;
+    }
+
+    setStoredSessionView(view);
+  }, [appState.activeAccountId, hasHydratedState, view]);
+
   const sessionAccount = activeAccount || (observerMode ? createObserverAccount(copy) : null);
   const leaderboard = getLeaderboardData(appState.accounts);
   const activeStats = sessionAccount ? getAccountStats(sessionAccount, language) : createEmptyStats(language);
@@ -950,6 +977,7 @@ export default function Page() {
     }));
 
     setObserverMode(false);
+    setStoredSessionView(null);
     setView("sustainability");
     setStatus(copy.status.loggedOut);
   }
@@ -3310,6 +3338,49 @@ function setStoredSessionAccountId(accountId) {
     window.localStorage.removeItem(SESSION_ACCOUNT_KEY);
   } catch (error) {
     console.warn("Konnte Session-Account nicht speichern.", error);
+  }
+}
+
+function getStoredSessionView() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const value = window.localStorage.getItem(SESSION_VIEW_KEY);
+    if (
+      value === "sustainability" ||
+      value === "activity" ||
+      value === "dashboard" ||
+      value === "leaderboard" ||
+      value === "chat" ||
+      value === "settings" ||
+      value === "feedback" ||
+      value === "survey"
+    ) {
+      return value;
+    }
+  } catch (error) {
+    console.warn("Konnte gespeicherte Ansicht nicht lesen.", error);
+  }
+
+  return null;
+}
+
+function setStoredSessionView(view) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    if (!view) {
+      window.localStorage.removeItem(SESSION_VIEW_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(SESSION_VIEW_KEY, view);
+  } catch (error) {
+    console.warn("Konnte gespeicherte Ansicht nicht speichern.", error);
   }
 }
 
