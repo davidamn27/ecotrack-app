@@ -1,6 +1,8 @@
 import "./globals.css";
 import ConvexClientProvider from "./convex-client-provider";
 
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "dev";
+
 const FALLBACK_CRITICAL_CSS = `
 :root {
   --bg: #edf3ee;
@@ -163,6 +165,34 @@ input, textarea, select {
 }
 `;
 
+const CACHE_BUSTER_SCRIPT = `
+(function () {
+  try {
+    var version = ${JSON.stringify(APP_VERSION)};
+    var key = "ecotrack-app-version";
+    var url = new URL(window.location.href);
+    var currentVersion = url.searchParams.get("v");
+    var storedVersion = window.localStorage.getItem(key);
+
+    if (currentVersion !== version) {
+      url.searchParams.set("v", version);
+      if (storedVersion && storedVersion !== version) {
+        url.searchParams.set("refresh", "1");
+      }
+      window.localStorage.setItem(key, version);
+      window.location.replace(url.toString());
+      return;
+    }
+
+    if (storedVersion !== version) {
+      window.localStorage.setItem(key, version);
+    }
+  } catch (error) {
+    console.warn("EcoTrack cache sync skipped", error);
+  }
+})();
+`;
+
 export const metadata = {
   title: "EcoTrack",
   description: "Nachhaltiges Verhalten vergleichen und sichtbar machen.",
@@ -172,7 +202,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="de">
       <head>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
         <style dangerouslySetInnerHTML={{ __html: FALLBACK_CRITICAL_CSS }} />
+        <script dangerouslySetInnerHTML={{ __html: CACHE_BUSTER_SCRIPT }} />
       </head>
       <body>
         <ConvexClientProvider>{children}</ConvexClientProvider>

@@ -21,6 +21,7 @@ jobs:
     env:
       GITHUB_ACTIONS: "true"
       NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
+      NEXT_PUBLIC_APP_VERSION: "${{ github.sha }}"
       NEXT_PUBLIC_CONVEX_URL: "https://hardy-clownfish-554.convex.cloud"
     steps:
       - name: Checkout
