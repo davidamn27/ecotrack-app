@@ -1892,8 +1892,6 @@ export default function Page() {
             rank={activeRank}
             communityCount={appState.accounts.length}
             status={status}
-            canExport={Boolean(activeAccount?.backendUserId)}
-            isExportingExcel={isExportingExcel}
             canAdminExport={canAdminExport}
             isExportingAllExcel={isExportingAllExcel}
             exportRangePreset={exportRangePreset}
@@ -1906,7 +1904,6 @@ export default function Page() {
             setExportRangePreset={setExportRangePreset}
             setExportDateFrom={setExportDateFrom}
             setExportDateTo={setExportDateTo}
-            handleExportExcel={handleExportExcel}
             handleExportAllExcel={handleExportAllExcel}
             setView={setView}
           />
@@ -2423,8 +2420,6 @@ function DashboardPanel({
   rank,
   communityCount,
   status,
-  canExport,
-  isExportingExcel,
   canAdminExport,
   isExportingAllExcel,
   exportRangePreset,
@@ -2437,7 +2432,6 @@ function DashboardPanel({
   setExportRangePreset,
   setExportDateFrom,
   setExportDateTo,
-  handleExportExcel,
   handleExportAllExcel,
   setView,
 }) {
@@ -2459,15 +2453,6 @@ function DashboardPanel({
             <div className="summary-chip">{copy.dashboard.rank(rank, communityCount)}</div>
             {canAdminExport ? (
               <>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={handleExportExcel}
-                  disabled={!canExport || isExportingExcel}
-                >
-                  {isExportingExcel ? copy.dashboard.exportLoading : copy.dashboard.exportExcel}
-                </button>
-                <p className="dashboard-export-hint">{copy.dashboard.exportHint}</p>
                 <button
                   type="button"
                   className="secondary-button"
