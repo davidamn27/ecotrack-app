@@ -12,7 +12,6 @@ const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
 const LEGACY_STORAGE_KEYS = [];
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const IS_DEV_BUILD = process.env.NODE_ENV !== "production";
-const TEST_USER_ID = "demo-power-user";
 
 function withBasePath(path) {
   return `${BASE_PATH}${path}`;
@@ -701,108 +700,6 @@ const EMPTY_STATE = {
   activityRequests: [],
   approvedActivities: [],
 };
-
-function createDemoTimestamp(daysAgo = 0, hour = 12) {
-  const date = new Date();
-  date.setDate(date.getDate() - daysAgo);
-  date.setHours(hour, 0, 0, 0);
-  return date.toISOString();
-}
-
-function createSeedState() {
-  const demoActivities = [
-    { id: "demo-act-1", category: "mobility", title: "Mit dem Fahrrad zur Uni", points: 84, note: "Testeintrag", createdAt: createDemoTimestamp(0, 8) },
-    { id: "demo-act-2", category: "nutrition", title: "Vegane Woche durchgezogen", points: 96, note: "Testeintrag", createdAt: createDemoTimestamp(1, 12) },
-    { id: "demo-act-3", category: "household", title: "Energieverbrauch bewusst gesenkt", points: 112, note: "Testeintrag", createdAt: createDemoTimestamp(2, 19) },
-    { id: "demo-act-4", category: "custom", title: "Repair-Cafe organisiert", points: 103, note: "Testeintrag", createdAt: createDemoTimestamp(3, 14) },
-    { id: "demo-act-5", category: "mobility", title: "Komplette Woche ohne Auto", points: 127, note: "Testeintrag", createdAt: createDemoTimestamp(4, 9) },
-    { id: "demo-act-6", category: "nutrition", title: "Foodsharing-Aktion umgesetzt", points: 118, note: "Testeintrag", createdAt: createDemoTimestamp(5, 18) },
-    { id: "demo-act-7", category: "household", title: "Wasserspar-Challenge", points: 92, note: "Testeintrag", createdAt: createDemoTimestamp(6, 7) },
-    { id: "demo-act-8", category: "custom", title: "Nachhaltigkeits-Workshop gegeben", points: 136, note: "Testeintrag", createdAt: createDemoTimestamp(8, 16) },
-    { id: "demo-act-9", category: "mobility", title: "Fahrradpendeln im ganzen Monat", points: 158, note: "Testeintrag", createdAt: createDemoTimestamp(10, 8) },
-    { id: "demo-act-10", category: "nutrition", title: "Regionale Einkaufschallenge", points: 149, note: "Testeintrag", createdAt: createDemoTimestamp(12, 11) },
-    { id: "demo-act-11", category: "household", title: "Heizkosten optimiert", points: 164, note: "Testeintrag", createdAt: createDemoTimestamp(15, 20) },
-    { id: "demo-act-12", category: "custom", title: "Campus-Tauschbörse gestartet", points: 177, note: "Testeintrag", createdAt: createDemoTimestamp(18, 13) },
-    { id: "demo-act-13", category: "mobility", title: "Mitfahrnetzwerk aufgebaut", points: 201, note: "Testeintrag", createdAt: createDemoTimestamp(22, 9) },
-    { id: "demo-act-14", category: "nutrition", title: "Kochabend mit geretteten Lebensmitteln", points: 173, note: "Testeintrag", createdAt: createDemoTimestamp(25, 18) },
-    { id: "demo-act-15", category: "household", title: "DIY-Upcycling-Projekt umgesetzt", points: 97, note: "Testeintrag", createdAt: createDemoTimestamp(28, 15) },
-  ];
-
-  return {
-    accounts: [
-      {
-        id: TEST_USER_ID,
-        name: "Eco Demo",
-        email: "demo@ecotrack.app",
-        city: "Berlin",
-        age: "24",
-        password: "demo1234",
-        createdAt: createDemoTimestamp(40, 10),
-        activities: demoActivities,
-      },
-    ],
-    activeAccountId: TEST_USER_ID,
-    chatMessages: [
-      {
-        id: "demo-chat-1",
-        accountId: TEST_USER_ID,
-        author: "Eco Demo",
-        message: "Ich teste gerade Chat, Level-System und Sammelliste. Alles laeuft bis hierhin sauber.",
-        createdAt: createDemoTimestamp(0, 13),
-      },
-    ],
-    customProposals: [
-      {
-        id: "demo-proposal-1",
-        createdBy: TEST_USER_ID,
-        createdByName: "Eco Demo",
-        title: "Regenwasser fuer Pflanzen genutzt",
-        proposedPoints: 7,
-        createdAt: createDemoTimestamp(1, 17),
-        votes: {},
-      },
-    ],
-    activityRequests: [
-      {
-        id: "demo-request-1",
-        category: "custom",
-        title: "Solarladegeraet im Alltag genutzt",
-        proposedPoints: 8,
-        createdBy: TEST_USER_ID,
-        createdByName: "Eco Demo",
-        createdAt: createDemoTimestamp(0, 14),
-      },
-    ],
-    approvedActivities: [
-      {
-        id: "demo-approved-1",
-        category: "custom",
-        title: "Mehrwegbecher im Alltag genutzt",
-        points: 3,
-        note: "Vom Entwickler freigegeben.",
-      },
-    ],
-  };
-}
-
-function ensureSeedData(state) {
-  const seed = createSeedState();
-  const hasTestUser = state.accounts.some((account) => account.id === TEST_USER_ID);
-
-  if (hasTestUser) {
-    return state;
-  }
-
-  return {
-    ...state,
-    accounts: [...state.accounts, ...seed.accounts],
-    activeAccountId: state.activeAccountId || (state.accounts.length ? state.activeAccountId : seed.activeAccountId),
-    chatMessages: [...seed.chatMessages, ...(state.chatMessages || [])],
-    customProposals: [...seed.customProposals, ...(state.customProposals || [])],
-    activityRequests: [...seed.activityRequests, ...(state.activityRequests || [])],
-    approvedActivities: [...seed.approvedActivities, ...(state.approvedActivities || [])],
-  };
-}
 
 export default function Page() {
   const [appState, setAppState] = useState(EMPTY_STATE);
@@ -3347,17 +3244,17 @@ function loadState() {
 
   const current = parseStorage(STORAGE_KEY);
   if (current) {
-    return IS_DEV_BUILD ? ensureSeedData(current) : current;
+    return removeDemoState(current);
   }
 
   for (const legacyKey of LEGACY_STORAGE_KEYS) {
     const legacy = parseStorage(legacyKey);
     if (legacy) {
-      return IS_DEV_BUILD ? ensureSeedData(legacy) : legacy;
+      return removeDemoState(legacy);
     }
   }
 
-  return IS_DEV_BUILD ? ensureSeedData(EMPTY_STATE) : EMPTY_STATE;
+  return EMPTY_STATE;
 }
 
 function parseStorage(key) {
@@ -3440,10 +3337,10 @@ function buildCatalogItems(approvedActivities = []) {
 
 function normalizeStoredState(parsed) {
   if (!parsed || !Array.isArray(parsed.accounts)) {
-    return IS_DEV_BUILD ? ensureSeedData(EMPTY_STATE) : EMPTY_STATE;
+    return EMPTY_STATE;
   }
 
-  return {
+  return removeDemoState({
     accounts: parsed.accounts.map(normalizeAccount),
     activeAccountId: parsed.activeAccountId || null,
     chatMessages: Array.isArray(parsed.chatMessages) ? parsed.chatMessages.map(normalizeChatMessage) : [],
@@ -3456,7 +3353,7 @@ function normalizeStoredState(parsed) {
     approvedActivities: Array.isArray(parsed.approvedActivities)
       ? parsed.approvedActivities.map(normalizeApprovedActivity)
       : [],
-  };
+  });
 }
 
 function normalizeAccount(account) {
@@ -3544,6 +3441,37 @@ function normalizeApprovedActivity(activity) {
     points: Number(activity.points) || 0,
     note: activity.note || "",
   };
+}
+
+function removeDemoState(state) {
+  const demoAccountIds = new Set(
+    (state.accounts || [])
+      .filter((account) => isDemoAccount(account))
+      .map((account) => account.id),
+  );
+
+  const accounts = (state.accounts || []).filter((account) => !demoAccountIds.has(account.id));
+  const activeAccountId = demoAccountIds.has(state.activeAccountId) ? null : state.activeAccountId;
+
+  return {
+    ...state,
+    accounts,
+    activeAccountId,
+    chatMessages: (state.chatMessages || []).filter((entry) => !demoAccountIds.has(entry.accountId)),
+    customProposals: (state.customProposals || []).filter(
+      (proposal) => !demoAccountIds.has(proposal.createdBy),
+    ),
+    activityRequests: (state.activityRequests || []).filter(
+      (request) => !demoAccountIds.has(request.createdBy),
+    ),
+    approvedActivities: (state.approvedActivities || []).filter(
+      (activity) => activity.id !== "demo-approved-1",
+    ),
+  };
+}
+
+function isDemoAccount(account) {
+  return account?.id === "demo-power-user" || account?.email === "demo@ecotrack.app";
 }
 
 function convertLegacyEntries(entries) {
