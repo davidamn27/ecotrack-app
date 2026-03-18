@@ -3392,9 +3392,9 @@ function normalizeActivity(activity) {
   return {
     id: activity.id || crypto.randomUUID(),
     category: activity.category || "custom",
-    title: activity.title || "Aktivität",
+    title: restoreGermanUmlauts(activity.title || "Aktivität"),
     points: Number(activity.points) || 0,
-    note: activity.note || "",
+    note: restoreGermanUmlauts(activity.note || ""),
     createdAt: activity.createdAt || new Date().toISOString(),
   };
 }
@@ -3413,8 +3413,8 @@ function normalizeProposal(proposal) {
   return {
     id: proposal.id || crypto.randomUUID(),
     createdBy: proposal.createdBy || "unknown",
-    createdByName: proposal.createdByName || "Unbekannt",
-    title: proposal.title || "Custom-Aktivität",
+    createdByName: restoreGermanUmlauts(proposal.createdByName || "Unbekannt"),
+    title: restoreGermanUmlauts(proposal.title || "Custom-Aktivität"),
     proposedPoints: Number(proposal.proposedPoints) || 0,
     createdAt: proposal.createdAt || new Date().toISOString(),
     votes: proposal.votes && typeof proposal.votes === "object" ? proposal.votes : {},
@@ -3425,10 +3425,10 @@ function normalizeActivityRequest(request) {
   return {
     id: request.id || crypto.randomUUID(),
     category: request.category || "custom",
-    title: request.title || "Aktivität",
+    title: restoreGermanUmlauts(request.title || "Aktivität"),
     proposedPoints: Number(request.proposedPoints) || 0,
     createdBy: request.createdBy || "unknown",
-    createdByName: request.createdByName || "Unbekannt",
+    createdByName: restoreGermanUmlauts(request.createdByName || "Unbekannt"),
     createdAt: request.createdAt || new Date().toISOString(),
   };
 }
@@ -3437,9 +3437,9 @@ function normalizeApprovedActivity(activity) {
   return {
     id: activity.id || crypto.randomUUID(),
     category: activity.category || "custom",
-    title: activity.title || "Aktivität",
+    title: restoreGermanUmlauts(activity.title || "Aktivität"),
     points: Number(activity.points) || 0,
-    note: activity.note || "",
+    note: restoreGermanUmlauts(activity.note || ""),
   };
 }
 
@@ -3487,6 +3487,20 @@ function convertLegacyEntries(entries) {
     note: "Automatisch aus der alten Version übernommen.",
     createdAt: `${entry.date || getTodayKey()}T12:00:00.000Z`,
   }));
+}
+
+function restoreGermanUmlauts(value) {
+  if (typeof value !== "string" || !value) {
+    return value || "";
+  }
+
+  return value
+    .replace(/Ae/g, "Ä")
+    .replace(/Oe/g, "Ö")
+    .replace(/Ue/g, "Ü")
+    .replace(/ae/g, "ä")
+    .replace(/oe/g, "ö")
+    .replace(/ue/g, "ü");
 }
 
 function getActiveAccount(appState) {
