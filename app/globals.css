@@ -259,10 +259,6 @@ label {
 .required-hint {
   position: relative;
   display: inline-flex;
-}
-
-.required-hint summary {
-  list-style: none;
   width: 1rem;
   height: 1rem;
   border-radius: 999px;
@@ -275,26 +271,7 @@ label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-}
-
-.required-hint summary::-webkit-details-marker {
-  display: none;
-}
-
-.required-hint > span {
-  position: absolute;
-  top: calc(100% + 0.35rem);
-  right: 0;
-  min-width: max-content;
-  padding: 0.3rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(18, 32, 25, 0.15);
-  background: rgba(255, 255, 255, 0.98);
-  color: var(--ink);
-  font-size: 0.75rem;
-  font-weight: 600;
-  box-shadow: 0 10px 20px rgba(18, 32, 25, 0.1);
+  cursor: help;
 }
 
 .checkbox-row {

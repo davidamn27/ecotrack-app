@@ -3190,12 +3190,7 @@ function ImprintFooter({ copy }) {
 }
 
 function RequiredHint({ text }) {
-  return (
-    <details className="required-hint">
-      <summary title={text}>!</summary>
-      <span>{text}</span>
-    </details>
-  );
+  return <span className="required-hint" title={text} aria-label={text}>!</span>;
 }
 
 function BarChart({ items }) {
