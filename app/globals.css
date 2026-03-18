@@ -485,7 +485,20 @@ select:focus {
 
 .export-filter-grid input,
 .export-filter-grid select {
-  min-height: 5.2rem;
+  height: 5.5rem;
+  min-height: 5.5rem;
+  padding: 0 1.15rem;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.export-filter-grid input {
+  display: flex;
+  align-items: center;
+}
+
+.export-filter-grid select {
+  appearance: none;
 }
 
 .login-state,
