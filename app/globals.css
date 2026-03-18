@@ -426,7 +426,7 @@ select:focus {
 
 .export-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
   width: 100%;
   margin-bottom: 0.9rem;
@@ -1490,8 +1490,7 @@ button:disabled {
   .chat-layout,
   .leaderboard-top,
   .stats-grid,
-  .table-layout,
-  .export-preview-grid {
+  .table-layout {
     grid-template-columns: 1fr;
   }
 }
