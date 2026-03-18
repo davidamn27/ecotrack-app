@@ -426,14 +426,15 @@ select:focus {
 
 .export-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 190px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  justify-content: start;
+  width: 100%;
   margin-bottom: 0.9rem;
 }
 
 .export-preview-card {
   height: 160px;
+  min-width: 0;
   padding: 0.9rem 1rem;
   display: flex;
   flex-direction: column;
@@ -467,6 +468,10 @@ select:focus {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   margin-bottom: 0.9rem;
+}
+
+.export-filter-card {
+  overflow: hidden;
 }
 
 .export-filter-grid {
