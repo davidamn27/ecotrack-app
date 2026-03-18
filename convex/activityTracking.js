@@ -99,6 +99,13 @@ export const getUserEntries = query({
   },
 });
 
+export const getAllEntries = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("activityEntries").collect();
+  },
+});
+
 export const getUserSummary = query({
   args: {
     userId: v.id("users"),

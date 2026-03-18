@@ -145,6 +145,32 @@ const COPY = {
       eyebrow: "Dashboard",
       title: (name) => `Statistik für ${name}`,
       rank: (rank, count) => `Rang ${rank} von ${count}`,
+      exportExcel: "Excel aus Convex exportieren",
+      exportAllExcel: "Alle Convex-Daten exportieren",
+      exportLoading: "Excel wird erstellt...",
+      exportAllLoading: "Gesamt-Export wird erstellt...",
+      exportHint: "Lädt die gespeicherten Convex-Daten und erstellt eine echte XLSX-Datei.",
+      exportAllHint: "Erstellt eine Admin-Excel mit allen Nutzern und allen Aktivitätseinträgen aus Convex.",
+      exportFilterTitle: "Export-Zeitraum",
+      exportFilterPreset: "Zeitraum auswählen",
+      exportFilterFrom: "Von",
+      exportFilterTo: "Bis",
+      exportFilterAll: "Alle Daten",
+      exportFilterToday: "Heute",
+      exportFilter7Days: "Letzte 7 Tage",
+      exportFilter30Days: "Letzte 30 Tage",
+      exportFilter90Days: "Letzte 90 Tage",
+      exportFilterThisMonth: "Dieser Monat",
+      exportFilterLastMonth: "Letzter Monat",
+      exportFilterYear: "Dieses Jahr",
+      exportFilterCustom: "Eigener Zeitraum",
+      exportFilterActive: (label, count) => `${label} • ${count} Einträge im Export`,
+      exportQuickTitle: "Schnellauswahl",
+      exportPreviewTitle: "Export-Vorschau",
+      exportPreviewEntries: "Einträge",
+      exportPreviewUsers: "Nutzer",
+      exportPreviewModeUser: "Nutzer-Export",
+      exportPreviewModeAdmin: "Admin-Gesamtexport",
       today: "Heute",
       week: "Woche",
       month: "Monat",
@@ -288,6 +314,15 @@ const COPY = {
       resetDataMismatch: "Die Angaben passen zu keinem Konto.",
       accountDeleted: "Dein Account wurde gelöscht.",
       feedbackSent: "Dein Verbesserungsvorschlag wurde an den Entwickler gesendet.",
+      exportRequiresAccount: "Für den Excel-Export musst du mit einem echten Konto angemeldet sein.",
+      exportAdminLoading: "Die Admin-Daten aus Convex werden noch geladen. Bitte gleich erneut versuchen.",
+      exportLoading: "Die Convex-Daten werden noch geladen. Bitte gleich erneut versuchen.",
+      exportDateRangeInvalid: "Bitte wähle einen gültigen Zeitraum. Das Bis-Datum darf nicht vor dem Von-Datum liegen.",
+      exportNoData: "Für den gewählten Zeitraum wurden keine Daten gefunden.",
+      exportSuccess: (count) => `Excel-Export erstellt. ${count} Einträge wurden heruntergeladen.`,
+      exportAllSuccess: (count, users) =>
+        `Admin-Export erstellt. ${count} Einträge von ${users} Nutzern wurden heruntergeladen.`,
+      exportError: "Excel-Export fehlgeschlagen. Bitte erneut versuchen.",
       genericError: "Technischer Fehler. Bitte erneut versuchen.",
     },
   },
@@ -389,6 +424,32 @@ const COPY = {
       eyebrow: "Dashboard",
       title: (name) => `Statistics for ${name}`,
       rank: (rank, count) => `Rank ${rank} of ${count}`,
+      exportExcel: "Export Convex data to Excel",
+      exportAllExcel: "Export all Convex data",
+      exportLoading: "Creating Excel file...",
+      exportAllLoading: "Creating full export...",
+      exportHint: "Loads the saved Convex data and creates a real XLSX file.",
+      exportAllHint: "Creates an admin Excel workbook with all users and all activity entries from Convex.",
+      exportFilterTitle: "Export range",
+      exportFilterPreset: "Select range",
+      exportFilterFrom: "From",
+      exportFilterTo: "To",
+      exportFilterAll: "All data",
+      exportFilterToday: "Today",
+      exportFilter7Days: "Last 7 days",
+      exportFilter30Days: "Last 30 days",
+      exportFilter90Days: "Last 90 days",
+      exportFilterThisMonth: "This month",
+      exportFilterLastMonth: "Last month",
+      exportFilterYear: "This year",
+      exportFilterCustom: "Custom range",
+      exportFilterActive: (label, count) => `${label} • ${count} entries in export`,
+      exportQuickTitle: "Quick select",
+      exportPreviewTitle: "Export preview",
+      exportPreviewEntries: "Entries",
+      exportPreviewUsers: "Users",
+      exportPreviewModeUser: "User export",
+      exportPreviewModeAdmin: "Admin full export",
       today: "Today",
       week: "Week",
       month: "Month",
@@ -532,6 +593,15 @@ const COPY = {
       resetDataMismatch: "The provided details do not match any account.",
       accountDeleted: "Your account was deleted.",
       feedbackSent: "Your suggestion was sent to the developer.",
+      exportRequiresAccount: "You need to sign in with a real account to export Excel data.",
+      exportAdminLoading: "Admin data from Convex is still loading. Please try again in a moment.",
+      exportLoading: "Convex data is still loading. Please try again in a moment.",
+      exportDateRangeInvalid: "Please choose a valid date range. The end date cannot be before the start date.",
+      exportNoData: "No data was found for the selected range.",
+      exportSuccess: (count) => `Excel export created. ${count} entries were downloaded.`,
+      exportAllSuccess: (count, users) =>
+        `Admin export created. ${count} entries from ${users} users were downloaded.`,
+      exportError: "Excel export failed. Please try again.",
       genericError: "Technical error. Please try again.",
     },
   },
@@ -754,6 +824,11 @@ export default function Page() {
   const [chatMessage, setChatMessage] = useState("");
   const [pendingActivities, setPendingActivities] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [isExportingAllExcel, setIsExportingAllExcel] = useState(false);
+  const [exportRangePreset, setExportRangePreset] = useState("30d");
+  const [exportDateFrom, setExportDateFrom] = useState("");
+  const [exportDateTo, setExportDateTo] = useState("");
   const remoteAppState = useQuery(api.appState.get, { name: "main" });
   const saveRemoteAppState = useMutation(api.appState.save);
   const registerUser = useMutation(api.users.register);
@@ -763,7 +838,29 @@ export default function Page() {
   const deleteUser = useMutation(api.users.deleteUser);
   const upsertActivityCatalog = useMutation(api.activityTracking.upsertCatalog);
   const addActivityEntries = useMutation(api.activityTracking.addEntries);
+  const activeAccount = getActiveAccount(appState);
+  const convexActivityEntries = useQuery(
+    api.activityTracking.getUserEntries,
+    activeAccount?.backendUserId ? { userId: activeAccount.backendUserId } : "skip",
+  );
+  const canAdminExport = observerMode || activeAccount?.email === DEVELOPER_EMAIL;
+  const convexUsers = useQuery(api.users.list, canAdminExport ? {} : "skip");
+  const convexAllActivityEntries = useQuery(
+    api.activityTracking.getAllEntries,
+    canAdminExport ? {} : "skip",
+  );
   const copy = COPY[language];
+  const selectedExportRangeLabel = getExportRangeLabel(exportRangePreset, copy);
+  const filteredUserExportEntries = filterEntriesForExport(convexActivityEntries, {
+    preset: exportRangePreset,
+    from: exportDateFrom,
+    to: exportDateTo,
+  });
+  const filteredAdminExportEntries = filterEntriesForExport(convexAllActivityEntries, {
+    preset: exportRangePreset,
+    from: exportDateFrom,
+    to: exportDateTo,
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -830,7 +927,6 @@ export default function Page() {
     setStoredSessionAccountId(appState.activeAccountId || null);
   }, [appState.activeAccountId, hasHydratedState]);
 
-  const activeAccount = getActiveAccount(appState);
   const sessionAccount = activeAccount || (observerMode ? createObserverAccount(copy) : null);
   const leaderboard = getLeaderboardData(appState.accounts);
   const activeStats = sessionAccount ? getAccountStats(sessionAccount, language) : createEmptyStats(language);
@@ -1078,6 +1174,129 @@ export default function Page() {
     } catch (error) {
       console.error("Account-Löschung fehlgeschlagen.", error);
       setStatus(copy.status.genericError);
+    }
+  }
+
+  async function handleExportExcel() {
+    if (!activeAccount?.backendUserId) {
+      setStatus(copy.status.exportRequiresAccount);
+      return;
+    }
+
+    if (convexActivityEntries === undefined) {
+      setStatus(copy.status.exportLoading);
+      return;
+    }
+
+    if (filteredUserExportEntries === null) {
+      setStatus(copy.status.exportDateRangeInvalid);
+      return;
+    }
+
+    if (!filteredUserExportEntries.length) {
+      setStatus(copy.status.exportNoData);
+      return;
+    }
+
+    setIsExportingExcel(true);
+    setStatus(copy.dashboard.exportLoading);
+
+    try {
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.utils.book_new();
+      const exportData = buildActivityExportWorkbook({
+        entries: filteredUserExportEntries,
+        account: activeAccount,
+        language,
+      });
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.summaryRows),
+        exportData.sheetNames.summary,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.categoryRows),
+        exportData.sheetNames.categories,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.monthRows),
+        exportData.sheetNames.months,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.entryRows),
+        exportData.sheetNames.entries,
+      );
+
+      XLSX.writeFile(workbook, buildExcelFilename(activeAccount.name));
+      setStatus(copy.status.exportSuccess(filteredUserExportEntries.length));
+    } catch (error) {
+      console.error("Excel-Export fehlgeschlagen.", error);
+      setStatus(copy.status.exportError);
+    } finally {
+      setIsExportingExcel(false);
+    }
+  }
+
+  async function handleExportAllExcel() {
+    if (convexUsers === undefined || convexAllActivityEntries === undefined) {
+      setStatus(copy.status.exportAdminLoading);
+      return;
+    }
+
+    if (filteredAdminExportEntries === null) {
+      setStatus(copy.status.exportDateRangeInvalid);
+      return;
+    }
+
+    if (!filteredAdminExportEntries.length) {
+      setStatus(copy.status.exportNoData);
+      return;
+    }
+
+    setIsExportingAllExcel(true);
+    setStatus(copy.dashboard.exportAllLoading);
+
+    try {
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.utils.book_new();
+      const exportData = buildCommunityExportWorkbook({
+        users: convexUsers,
+        entries: filteredAdminExportEntries,
+        language,
+      });
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.summaryRows),
+        exportData.sheetNames.summary,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.userRows),
+        exportData.sheetNames.users,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.categoryRows),
+        exportData.sheetNames.categories,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(exportData.entryRows),
+        exportData.sheetNames.entries,
+      );
+
+      XLSX.writeFile(workbook, buildCommunityExcelFilename());
+      setStatus(copy.status.exportAllSuccess(filteredAdminExportEntries.length, convexUsers.length));
+    } catch (error) {
+      console.error("Admin-Export fehlgeschlagen.", error);
+      setStatus(copy.status.exportError);
+    } finally {
+      setIsExportingAllExcel(false);
     }
   }
 
@@ -1728,6 +1947,23 @@ export default function Page() {
             handleReviewActivityRequest={handleReviewActivityRequest}
             rank={activeRank}
             communityCount={appState.accounts.length}
+            status={status}
+            canExport={Boolean(activeAccount?.backendUserId)}
+            isExportingExcel={isExportingExcel}
+            canAdminExport={canAdminExport}
+            isExportingAllExcel={isExportingAllExcel}
+            exportRangePreset={exportRangePreset}
+            exportDateFrom={exportDateFrom}
+            exportDateTo={exportDateTo}
+            selectedExportRangeLabel={selectedExportRangeLabel}
+            filteredUserExportCount={Array.isArray(filteredUserExportEntries) ? filteredUserExportEntries.length : 0}
+            filteredAdminExportCount={Array.isArray(filteredAdminExportEntries) ? filteredAdminExportEntries.length : 0}
+            adminUserCount={Array.isArray(convexUsers) ? convexUsers.length : 0}
+            setExportRangePreset={setExportRangePreset}
+            setExportDateFrom={setExportDateFrom}
+            setExportDateTo={setExportDateTo}
+            handleExportExcel={handleExportExcel}
+            handleExportAllExcel={handleExportAllExcel}
             setView={setView}
           />
         )}
@@ -2242,6 +2478,23 @@ function DashboardPanel({
   handleReviewActivityRequest,
   rank,
   communityCount,
+  status,
+  canExport,
+  isExportingExcel,
+  canAdminExport,
+  isExportingAllExcel,
+  exportRangePreset,
+  exportDateFrom,
+  exportDateTo,
+  selectedExportRangeLabel,
+  filteredUserExportCount,
+  filteredAdminExportCount,
+  adminUserCount,
+  setExportRangePreset,
+  setExportDateFrom,
+  setExportDateTo,
+  handleExportExcel,
+  handleExportAllExcel,
   setView,
 }) {
   const periodRows = [
@@ -2258,10 +2511,142 @@ function DashboardPanel({
           <h2>{copy.dashboard.title(account.name)}</h2>
         </div>
         <div className="dashboard-head-actions">
-          <div className="summary-chip">{copy.dashboard.rank(rank, communityCount)}</div>
+          <div className="dashboard-export-stack">
+            <div className="summary-chip">{copy.dashboard.rank(rank, communityCount)}</div>
+            {canAdminExport ? (
+              <>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleExportExcel}
+                  disabled={!canExport || isExportingExcel}
+                >
+                  {isExportingExcel ? copy.dashboard.exportLoading : copy.dashboard.exportExcel}
+                </button>
+                <p className="dashboard-export-hint">{copy.dashboard.exportHint}</p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleExportAllExcel}
+                  disabled={isExportingAllExcel}
+                >
+                  {isExportingAllExcel ? copy.dashboard.exportAllLoading : copy.dashboard.exportAllExcel}
+                </button>
+                <p className="dashboard-export-hint">{copy.dashboard.exportAllHint}</p>
+              </>
+            ) : null}
+          </div>
           <UtilityNav activeView="dashboard" setView={setView} copy={copy} />
         </div>
       </div>
+
+      <p className="status-message dashboard-status">{status}</p>
+
+      {canAdminExport ? (
+        <div className="custom-card export-filter-card">
+          <div className="export-filter-head">
+            <div>
+              <p className="eyebrow">{copy.dashboard.exportFilterTitle}</p>
+              <h3 className="subhead">{selectedExportRangeLabel}</h3>
+            </div>
+            <p className="dashboard-export-hint">
+              {copy.dashboard.exportFilterActive(selectedExportRangeLabel, filteredAdminExportCount)}
+            </p>
+          </div>
+          <div className="export-preview-grid">
+            <article className="metric-card export-preview-card accent-card">
+              <p className="metric-label">{copy.dashboard.exportPreviewTitle}</p>
+              <p className="metric-value">{copy.dashboard.exportPreviewModeAdmin}</p>
+            </article>
+            <article className="metric-card export-preview-card">
+              <p className="metric-label">{copy.dashboard.exportPreviewEntries}</p>
+              <p className="metric-value">{filteredAdminExportCount}</p>
+            </article>
+            <article className="metric-card export-preview-card">
+              <p className="metric-label">{copy.dashboard.exportPreviewUsers}</p>
+              <p className="metric-value">{adminUserCount}</p>
+            </article>
+          </div>
+          <div className="export-quick-row" aria-label={copy.dashboard.exportQuickTitle}>
+            <button
+              type="button"
+              className={`micro-button${exportRangePreset === "today" ? " active" : ""}`}
+              onClick={() => setExportRangePreset("today")}
+            >
+              {copy.dashboard.exportFilterToday}
+            </button>
+            <button
+              type="button"
+              className={`micro-button${exportRangePreset === "thisMonth" ? " active" : ""}`}
+              onClick={() => setExportRangePreset("thisMonth")}
+            >
+              {copy.dashboard.exportFilterThisMonth}
+            </button>
+            <button
+              type="button"
+              className={`micro-button${exportRangePreset === "lastMonth" ? " active" : ""}`}
+              onClick={() => setExportRangePreset("lastMonth")}
+            >
+              {copy.dashboard.exportFilterLastMonth}
+            </button>
+            <button
+              type="button"
+              className={`micro-button${exportRangePreset === "7d" ? " active" : ""}`}
+              onClick={() => setExportRangePreset("7d")}
+            >
+              {copy.dashboard.exportFilter7Days}
+            </button>
+            <button
+              type="button"
+              className={`micro-button${exportRangePreset === "30d" ? " active" : ""}`}
+              onClick={() => setExportRangePreset("30d")}
+            >
+              {copy.dashboard.exportFilter30Days}
+            </button>
+          </div>
+          <div className="export-filter-grid">
+            <label>
+              {copy.dashboard.exportFilterPreset}
+              <select
+                value={exportRangePreset}
+                onChange={(event) => setExportRangePreset(event.target.value)}
+              >
+                <option value="all">{copy.dashboard.exportFilterAll}</option>
+                <option value="today">{copy.dashboard.exportFilterToday}</option>
+                <option value="7d">{copy.dashboard.exportFilter7Days}</option>
+                <option value="30d">{copy.dashboard.exportFilter30Days}</option>
+                <option value="90d">{copy.dashboard.exportFilter90Days}</option>
+                <option value="thisMonth">{copy.dashboard.exportFilterThisMonth}</option>
+                <option value="lastMonth">{copy.dashboard.exportFilterLastMonth}</option>
+                <option value="year">{copy.dashboard.exportFilterYear}</option>
+                <option value="custom">{copy.dashboard.exportFilterCustom}</option>
+              </select>
+            </label>
+            <label>
+              {copy.dashboard.exportFilterFrom}
+              <input
+                type="date"
+                value={exportDateFrom}
+                onChange={(event) => {
+                  setExportRangePreset("custom");
+                  setExportDateFrom(event.target.value);
+                }}
+              />
+            </label>
+            <label>
+              {copy.dashboard.exportFilterTo}
+              <input
+                type="date"
+                value={exportDateTo}
+                onChange={(event) => {
+                  setExportRangePreset("custom");
+                  setExportDateTo(event.target.value);
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
 
       <div className="stats-grid">
         <article className="metric-card accent-card">
@@ -2350,46 +2735,48 @@ function DashboardPanel({
         </div>
       </div>
 
-      <div className="table-card">
-        <h3 className="subhead">{copy.dashboard.developerReview}</h3>
-        <p className="chat-note">{copy.dashboard.pendingRequests}</p>
-        <div className="proposal-list">
-          {activityRequests.length ? (
-            activityRequests.map((request) => (
-              <article key={request.id} className="proposal-card">
-                <div className="proposal-head">
-                  <div>
-                    <h4>{request.title}</h4>
-                    <p>{request.createdByName}</p>
+      {canAdminExport ? (
+        <div className="table-card">
+          <h3 className="subhead">{copy.dashboard.developerReview}</h3>
+          <p className="chat-note">{copy.dashboard.pendingRequests}</p>
+          <div className="proposal-list">
+            {activityRequests.length ? (
+              activityRequests.map((request) => (
+                <article key={request.id} className="proposal-card">
+                  <div className="proposal-head">
+                    <div>
+                      <h4>{request.title}</h4>
+                      <p>{request.createdByName}</p>
+                    </div>
+                    <div className="proposal-score">
+                      <span>{getCategoryLabel(request.category, language)}</span>
+                      <strong>{request.proposedPoints}</strong>
+                    </div>
                   </div>
-                  <div className="proposal-score">
-                    <span>{getCategoryLabel(request.category, language)}</span>
-                    <strong>{request.proposedPoints}</strong>
+                  <div className="proposal-actions">
+                    <button
+                      type="button"
+                      className="primary-button small-button"
+                      onClick={() => handleReviewActivityRequest(request.id, "approve")}
+                    >
+                      {copy.dashboard.approve}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button small-button"
+                      onClick={() => handleReviewActivityRequest(request.id, "reject")}
+                    >
+                      {copy.dashboard.reject}
+                    </button>
                   </div>
-                </div>
-                <div className="proposal-actions">
-                  <button
-                    type="button"
-                    className="primary-button small-button"
-                    onClick={() => handleReviewActivityRequest(request.id, "approve")}
-                  >
-                    {copy.dashboard.approve}
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-button small-button"
-                    onClick={() => handleReviewActivityRequest(request.id, "reject")}
-                  >
-                    {copy.dashboard.reject}
-                  </button>
-                </div>
-              </article>
-            ))
-          ) : (
-            <p className="empty-note">{copy.dashboard.noRequests}</p>
-          )}
+                </article>
+              ))
+            ) : (
+              <p className="empty-note">{copy.dashboard.noRequests}</p>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }
@@ -3347,9 +3734,499 @@ function formatDateTime(dateString, language = "de") {
   return new Date(dateString).toLocaleString(language === "en" ? "en-US" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function filterEntriesForExport(entries, range) {
+  if (entries === undefined) {
+    return undefined;
+  }
+
+  const normalizedEntries = Array.isArray(entries) ? entries : [];
+  const now = new Date();
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  if (range.preset === "custom") {
+    const start = range.from ? parseDateInput(range.from, false) : null;
+    const end = range.to ? parseDateInput(range.to, true) : null;
+
+    if (start && end && start.getTime() > end.getTime()) {
+      return null;
+    }
+
+    return normalizedEntries.filter((entry) => {
+      const createdAt = new Date(entry.createdAt);
+      if (start && createdAt < start) {
+        return false;
+      }
+      if (end && createdAt > end) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  if (range.preset === "all") {
+    return normalizedEntries;
+  }
+
+  let start = null;
+  let end = todayEnd;
+  if (range.preset === "today") {
+    start = new Date(todayEnd);
+    start.setHours(0, 0, 0, 0);
+  } else if (range.preset === "7d") {
+    start = new Date(todayEnd);
+    start.setDate(start.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+  } else if (range.preset === "30d") {
+    start = new Date(todayEnd);
+    start.setDate(start.getDate() - 29);
+    start.setHours(0, 0, 0, 0);
+  } else if (range.preset === "90d") {
+    start = new Date(todayEnd);
+    start.setDate(start.getDate() - 89);
+    start.setHours(0, 0, 0, 0);
+  } else if (range.preset === "thisMonth") {
+    start = new Date(todayEnd.getFullYear(), todayEnd.getMonth(), 1, 0, 0, 0, 0);
+  } else if (range.preset === "lastMonth") {
+    start = new Date(todayEnd.getFullYear(), todayEnd.getMonth() - 1, 1, 0, 0, 0, 0);
+    end = new Date(todayEnd.getFullYear(), todayEnd.getMonth(), 0, 23, 59, 59, 999);
+  } else if (range.preset === "year") {
+    start = new Date(todayEnd.getFullYear(), 0, 1, 0, 0, 0, 0);
+  }
+
+  if (!start) {
+    return normalizedEntries;
+  }
+
+  return normalizedEntries.filter((entry) => {
+    const createdAt = new Date(entry.createdAt);
+    return createdAt >= start && createdAt <= end;
+  });
+}
+
+function parseDateInput(value, endOfDay = false) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getExportRangeLabel(preset, copy) {
+  const labels = {
+    all: copy.dashboard.exportFilterAll,
+    today: copy.dashboard.exportFilterToday,
+    "7d": copy.dashboard.exportFilter7Days,
+    "30d": copy.dashboard.exportFilter30Days,
+    "90d": copy.dashboard.exportFilter90Days,
+    thisMonth: copy.dashboard.exportFilterThisMonth,
+    lastMonth: copy.dashboard.exportFilterLastMonth,
+    year: copy.dashboard.exportFilterYear,
+    custom: copy.dashboard.exportFilterCustom,
+  };
+
+  return labels[preset] || copy.dashboard.exportFilter30Days;
+}
+
+function buildActivityExportWorkbook({ entries, account, language = "de" }) {
+  const labels = getExcelLabels(language);
+  const now = new Date();
+  const normalizedEntries = [...entries]
+    .map((entry) => ({
+      ...entry,
+      createdAtIso: new Date(entry.createdAt).toISOString(),
+    }))
+    .sort((left, right) => right.createdAt - left.createdAt);
+
+  const totalPoints = normalizedEntries.reduce((sum, entry) => sum + (entry.points || 0), 0);
+  const todayPoints = normalizedEntries
+    .filter((entry) => isWithinDays(entry.createdAtIso, 1, now))
+    .reduce((sum, entry) => sum + entry.points, 0);
+  const weekPoints = normalizedEntries
+    .filter((entry) => isWithinDays(entry.createdAtIso, 7, now))
+    .reduce((sum, entry) => sum + entry.points, 0);
+  const monthPoints = normalizedEntries
+    .filter((entry) => isWithinDays(entry.createdAtIso, 30, now))
+    .reduce((sum, entry) => sum + entry.points, 0);
+
+  const categoryMap = new Map();
+  const monthMap = new Map();
+
+  normalizedEntries.forEach((entry) => {
+    const categoryLabel = getCategoryLabel(entry.category, language);
+    const monthKey = entry.dateKey.slice(0, 7);
+    const currentCategory = categoryMap.get(categoryLabel) || { points: 0, activities: 0 };
+    const currentMonth = monthMap.get(monthKey) || { points: 0, activities: 0 };
+
+    currentCategory.points += entry.points;
+    currentCategory.activities += 1;
+    categoryMap.set(categoryLabel, currentCategory);
+
+    currentMonth.points += entry.points;
+    currentMonth.activities += 1;
+    monthMap.set(monthKey, currentMonth);
+  });
+
+  const firstEntry = normalizedEntries[normalizedEntries.length - 1];
+  const lastEntry = normalizedEntries[0];
+
+  return {
+    sheetNames: labels.sheetNames,
+    summaryRows: [
+      { [labels.summary.metric]: labels.summary.user, [labels.summary.value]: account.name },
+      { [labels.summary.metric]: labels.summary.email, [labels.summary.value]: account.email },
+      { [labels.summary.metric]: labels.summary.exportedAt, [labels.summary.value]: formatDateTime(now.toISOString(), language) },
+      { [labels.summary.metric]: labels.summary.activities, [labels.summary.value]: normalizedEntries.length },
+      { [labels.summary.metric]: labels.summary.totalPoints, [labels.summary.value]: totalPoints },
+      { [labels.summary.metric]: labels.summary.todayPoints, [labels.summary.value]: todayPoints },
+      { [labels.summary.metric]: labels.summary.weekPoints, [labels.summary.value]: weekPoints },
+      { [labels.summary.metric]: labels.summary.monthPoints, [labels.summary.value]: monthPoints },
+      {
+        [labels.summary.metric]: labels.summary.firstEntry,
+        [labels.summary.value]: firstEntry ? formatDateTime(firstEntry.createdAtIso, language) : labels.empty,
+      },
+      {
+        [labels.summary.metric]: labels.summary.lastEntry,
+        [labels.summary.value]: lastEntry ? formatDateTime(lastEntry.createdAtIso, language) : labels.empty,
+      },
+    ],
+    categoryRows: Array.from(categoryMap.entries())
+      .map(([category, values]) => ({
+        [labels.categories.category]: category,
+        [labels.categories.activities]: values.activities,
+        [labels.categories.points]: values.points,
+      }))
+      .sort((left, right) => right[labels.categories.points] - left[labels.categories.points]),
+    monthRows: Array.from(monthMap.entries())
+      .map(([month, values]) => ({
+        [labels.months.month]: month,
+        [labels.months.activities]: values.activities,
+        [labels.months.points]: values.points,
+      }))
+      .sort((left, right) => right[labels.months.month].localeCompare(left[labels.months.month])),
+    entryRows: normalizedEntries.map((entry) => ({
+      [labels.entries.date]: formatDate(entry.createdAtIso, language),
+      [labels.entries.time]: formatDateTime(entry.createdAtIso, language),
+      [labels.entries.category]: getCategoryLabel(entry.category, language),
+      [labels.entries.activity]: entry.title,
+      [labels.entries.points]: entry.points,
+      [labels.entries.note]: entry.note || "",
+      [labels.entries.dateKey]: entry.dateKey,
+    })),
+  };
+}
+
+function buildCommunityExportWorkbook({ users, entries, language = "de" }) {
+  const labels = getCommunityExcelLabels(language);
+  const now = new Date();
+  const userLookup = new Map(
+    users.map((user) => [
+      user._id,
+      {
+        id: user._id,
+        name: user.name || labels.unknownUser,
+        email: user.email || "",
+        city: user.city || "",
+        age: user.age || "",
+        createdAt: user.createdAt || null,
+      },
+    ]),
+  );
+
+  const normalizedEntries = [...entries]
+    .map((entry) => ({
+      ...entry,
+      createdAtIso: new Date(entry.createdAt).toISOString(),
+      user: userLookup.get(entry.userId) || {
+        id: entry.userId,
+        name: labels.unknownUser,
+        email: "",
+        city: "",
+        age: "",
+        createdAt: null,
+      },
+    }))
+    .sort((left, right) => right.createdAt - left.createdAt);
+
+  const userStats = new Map(
+    users.map((user) => [
+      user._id,
+      { activities: 0, points: 0, lastActivityAt: null },
+    ]),
+  );
+  const categoryStats = new Map();
+
+  normalizedEntries.forEach((entry) => {
+    const stats = userStats.get(entry.userId) || { activities: 0, points: 0, lastActivityAt: null };
+    stats.activities += 1;
+    stats.points += entry.points;
+    stats.lastActivityAt = !stats.lastActivityAt || entry.createdAt > stats.lastActivityAt
+      ? entry.createdAt
+      : stats.lastActivityAt;
+    userStats.set(entry.userId, stats);
+
+    const categoryLabel = getCategoryLabel(entry.category, language);
+    const currentCategory = categoryStats.get(categoryLabel) || { activities: 0, points: 0 };
+    currentCategory.activities += 1;
+    currentCategory.points += entry.points;
+    categoryStats.set(categoryLabel, currentCategory);
+  });
+
+  return {
+    sheetNames: labels.sheetNames,
+    summaryRows: [
+      { [labels.summary.metric]: labels.summary.exportedAt, [labels.summary.value]: formatDateTime(now.toISOString(), language) },
+      { [labels.summary.metric]: labels.summary.users, [labels.summary.value]: users.length },
+      { [labels.summary.metric]: labels.summary.activities, [labels.summary.value]: normalizedEntries.length },
+      {
+        [labels.summary.metric]: labels.summary.totalPoints,
+        [labels.summary.value]: normalizedEntries.reduce((sum, entry) => sum + entry.points, 0),
+      },
+    ],
+    userRows: users
+      .map((user) => {
+        const stats = userStats.get(user._id) || { activities: 0, points: 0, lastActivityAt: null };
+        return {
+          [labels.users.name]: user.name || labels.unknownUser,
+          [labels.users.email]: user.email || "",
+          [labels.users.city]: user.city || "",
+          [labels.users.age]: user.age || "",
+          [labels.users.registeredAt]: user.createdAt
+            ? formatDateTime(new Date(user.createdAt).toISOString(), language)
+            : labels.empty,
+          [labels.users.activities]: stats.activities,
+          [labels.users.points]: stats.points,
+          [labels.users.lastActivity]: stats.lastActivityAt
+            ? formatDateTime(new Date(stats.lastActivityAt).toISOString(), language)
+            : labels.empty,
+        };
+      })
+      .sort((left, right) => right[labels.users.points] - left[labels.users.points]),
+    categoryRows: Array.from(categoryStats.entries())
+      .map(([category, values]) => ({
+        [labels.categories.category]: category,
+        [labels.categories.activities]: values.activities,
+        [labels.categories.points]: values.points,
+      }))
+      .sort((left, right) => right[labels.categories.points] - left[labels.categories.points]),
+    entryRows: normalizedEntries.map((entry) => ({
+      [labels.entries.user]: entry.user.name,
+      [labels.entries.email]: entry.user.email,
+      [labels.entries.date]: formatDate(entry.createdAtIso, language),
+      [labels.entries.time]: formatDateTime(entry.createdAtIso, language),
+      [labels.entries.category]: getCategoryLabel(entry.category, language),
+      [labels.entries.activity]: entry.title,
+      [labels.entries.points]: entry.points,
+      [labels.entries.note]: entry.note || "",
+      [labels.entries.dateKey]: entry.dateKey,
+    })),
+  };
+}
+
+function getExcelLabels(language = "de") {
+  if (language === "en") {
+    return {
+      empty: "No data",
+      sheetNames: {
+        summary: "Summary",
+        categories: "Categories",
+        months: "Months",
+        entries: "Activities",
+      },
+      summary: {
+        metric: "Metric",
+        value: "Value",
+        user: "User",
+        email: "Email",
+        exportedAt: "Exported at",
+        activities: "Activities",
+        totalPoints: "Total points",
+        todayPoints: "Points today",
+        weekPoints: "Points last 7 days",
+        monthPoints: "Points last 30 days",
+        firstEntry: "First activity",
+        lastEntry: "Latest activity",
+      },
+      categories: {
+        category: "Category",
+        activities: "Activities",
+        points: "Points",
+      },
+      months: {
+        month: "Month",
+        activities: "Activities",
+        points: "Points",
+      },
+      entries: {
+        date: "Date",
+        time: "Date and time",
+        category: "Category",
+        activity: "Activity",
+        points: "Points",
+        note: "Note",
+        dateKey: "Date key",
+      },
+    };
+  }
+
+  return {
+    empty: "Keine Daten",
+    sheetNames: {
+      summary: "Zusammenfassung",
+      categories: "Kategorien",
+      months: "Monate",
+      entries: "Aktivitaeten",
+    },
+    summary: {
+      metric: "Kennzahl",
+      value: "Wert",
+      user: "Nutzer",
+      email: "E-Mail",
+      exportedAt: "Exportiert am",
+      activities: "Aktivitaeten",
+      totalPoints: "Punkte gesamt",
+      todayPoints: "Punkte heute",
+      weekPoints: "Punkte letzte 7 Tage",
+      monthPoints: "Punkte letzte 30 Tage",
+      firstEntry: "Erste Aktivitaet",
+      lastEntry: "Neueste Aktivitaet",
+    },
+    categories: {
+      category: "Kategorie",
+      activities: "Aktivitaeten",
+      points: "Punkte",
+    },
+    months: {
+      month: "Monat",
+      activities: "Aktivitaeten",
+      points: "Punkte",
+    },
+    entries: {
+      date: "Datum",
+      time: "Datum und Uhrzeit",
+      category: "Kategorie",
+      activity: "Aktivitaet",
+      points: "Punkte",
+      note: "Notiz",
+      dateKey: "Datumsschluessel",
+    },
+  };
+}
+
+function getCommunityExcelLabels(language = "de") {
+  if (language === "en") {
+    return {
+      empty: "No data",
+      unknownUser: "Unknown user",
+      sheetNames: {
+        summary: "Summary",
+        users: "Users",
+        categories: "Categories",
+        entries: "Activities",
+      },
+      summary: {
+        metric: "Metric",
+        value: "Value",
+        exportedAt: "Exported at",
+        users: "Users",
+        activities: "Activities",
+        totalPoints: "Total points",
+      },
+      users: {
+        name: "Name",
+        email: "Email",
+        city: "City",
+        age: "Age",
+        registeredAt: "Registered at",
+        activities: "Activities",
+        points: "Points",
+        lastActivity: "Latest activity",
+      },
+      categories: {
+        category: "Category",
+        activities: "Activities",
+        points: "Points",
+      },
+      entries: {
+        user: "User",
+        email: "Email",
+        date: "Date",
+        time: "Date and time",
+        category: "Category",
+        activity: "Activity",
+        points: "Points",
+        note: "Note",
+        dateKey: "Date key",
+      },
+    };
+  }
+
+  return {
+    empty: "Keine Daten",
+    unknownUser: "Unbekannter Nutzer",
+    sheetNames: {
+      summary: "Zusammenfassung",
+      users: "Nutzer",
+      categories: "Kategorien",
+      entries: "Aktivitaeten",
+    },
+    summary: {
+      metric: "Kennzahl",
+      value: "Wert",
+      exportedAt: "Exportiert am",
+      users: "Nutzer",
+      activities: "Aktivitaeten",
+      totalPoints: "Punkte gesamt",
+    },
+    users: {
+      name: "Name",
+      email: "E-Mail",
+      city: "Stadt",
+      age: "Alter",
+      registeredAt: "Registriert am",
+      activities: "Aktivitaeten",
+      points: "Punkte",
+      lastActivity: "Neueste Aktivitaet",
+    },
+    categories: {
+      category: "Kategorie",
+      activities: "Aktivitaeten",
+      points: "Punkte",
+    },
+    entries: {
+      user: "Nutzer",
+      email: "E-Mail",
+      date: "Datum",
+      time: "Datum und Uhrzeit",
+      category: "Kategorie",
+      activity: "Aktivitaet",
+      points: "Punkte",
+      note: "Notiz",
+      dateKey: "Datumsschluessel",
+    },
+  };
+}
+
+function buildExcelFilename(name) {
+  const slug = String(name || "ecotrack")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "ecotrack";
+  const stamp = new Date().toISOString().slice(0, 10);
+  return `ecotrack-export-${slug}-${stamp}.xlsx`;
+}
+
+function buildCommunityExcelFilename() {
+  const stamp = new Date().toISOString().slice(0, 10);
+  return `ecotrack-admin-export-${stamp}.xlsx`;
 }
 
 function getProposalAverage(proposal) {
