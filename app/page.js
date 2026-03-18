@@ -1224,8 +1224,8 @@ export default function Page() {
     const entry = {
       id: crypto.randomUUID(),
       accountId: activeAccount?.id || "system",
-      author: activeAccount?.name || "System",
-      message,
+      author: restoreGermanUmlauts(activeAccount?.name || "System"),
+      message: restoreGermanUmlauts(message),
       createdAt: new Date().toISOString(),
     };
 
@@ -1260,9 +1260,9 @@ export default function Page() {
     const entry = {
       id: crypto.randomUUID(),
       category: activity.category,
-      title: activity.title,
+      title: restoreGermanUmlauts(activity.title),
       points: activity.points,
-      note: activity.note || "",
+      note: restoreGermanUmlauts(activity.note || ""),
       createdAt: new Date().toISOString(),
     };
 
@@ -1295,9 +1295,9 @@ export default function Page() {
     const entries = activities.map((activity) => ({
       id: crypto.randomUUID(),
       category: activity.category,
-      title: activity.title,
+      title: restoreGermanUmlauts(activity.title),
       points: activity.points,
-      note: activity.note || "",
+      note: restoreGermanUmlauts(activity.note || ""),
       createdAt: new Date().toISOString(),
     }));
 
@@ -1325,9 +1325,9 @@ export default function Page() {
     const queueItem = {
       id: crypto.randomUUID(),
       category: selectedCategory,
-      title: item.title,
+      title: restoreGermanUmlauts(item.title),
       points: item.points,
-      note: item.note,
+      note: restoreGermanUmlauts(item.note),
     };
 
     setPendingActivities((current) => [...current, queueItem]);
@@ -1348,16 +1348,19 @@ export default function Page() {
   }
 
   function submitActivityRequest(category, title, points) {
+    const normalizedTitle = restoreGermanUmlauts(title);
+    const normalizedCreatorName = restoreGermanUmlauts(activeAccount.name);
+
     updateAppState((current) => ({
       ...current,
       activityRequests: [
         {
           id: crypto.randomUUID(),
           category,
-          title,
+          title: normalizedTitle,
           proposedPoints: points,
           createdBy: current.activeAccountId,
-          createdByName: activeAccount.name,
+          createdByName: normalizedCreatorName,
           createdAt: new Date().toISOString(),
         },
         ...(current.activityRequests || []),
@@ -1365,20 +1368,22 @@ export default function Page() {
     }));
 
     if (typeof window !== "undefined") {
-      const subject = encodeURIComponent(`EcoTrack Vorschlag: ${title}`);
+      const subject = encodeURIComponent(`EcoTrack Vorschlag: ${normalizedTitle}`);
       const body = encodeURIComponent(
-        `Neuer Aktivitätsvorschlag für EcoTrack\n\nKategorie: ${getCategoryLabel(category, "de")}\nAktivität: ${title}\nVorgeschlagene Punkte: ${points}\nEingereicht von: ${activeAccount.name} (${activeAccount.email})`,
+        `Neuer Aktivitätsvorschlag für EcoTrack\n\nKategorie: ${getCategoryLabel(category, "de")}\nAktivität: ${normalizedTitle}\nVorgeschlagene Punkte: ${points}\nEingereicht von: ${normalizedCreatorName} (${activeAccount.email})`,
       );
       window.location.href = `mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`;
     }
 
-    setStatus(`${copy.status.requestSubmitted(title)} ${copy.status.developerMailOpened(title)}`);
+    setStatus(
+      `${copy.status.requestSubmitted(normalizedTitle)} ${copy.status.developerMailOpened(normalizedTitle)}`,
+    );
   }
 
   function handleSubmitActivityRequest(event) {
     event.preventDefault();
 
-    const title = requestTitle.trim();
+    const title = restoreGermanUmlauts(requestTitle.trim());
     const points = Number(requestPoints);
 
     if (!title || Number.isNaN(points) || points < 1) {
@@ -1399,7 +1404,7 @@ export default function Page() {
     }
 
     const formData = new FormData(event.currentTarget);
-    const suggestion = String(formData.get("suggestion") || "").trim();
+    const suggestion = restoreGermanUmlauts(String(formData.get("suggestion") || "").trim());
     const category = String(formData.get("category") || "").trim() || "mobility";
 
     if (!suggestion) {
@@ -1408,9 +1413,11 @@ export default function Page() {
     }
 
     if (typeof window !== "undefined") {
-      const subject = encodeURIComponent(`EcoTrack Verbesserungsvorschlag von ${activeAccount.name}`);
+      const subject = encodeURIComponent(
+        `EcoTrack Verbesserungsvorschlag von ${restoreGermanUmlauts(activeAccount.name)}`,
+      );
       const body = encodeURIComponent(
-        `Verbesserungsvorschlag für EcoTrack\n\nUser-Name: ${activeAccount.name}\nE-Mail: ${activeAccount.email}\nBereich: ${getFeedbackCategoryLabel(category, "de", COPY.de)}\n\nVorschlag:\n${suggestion}`,
+        `Verbesserungsvorschlag für EcoTrack\n\nUser-Name: ${restoreGermanUmlauts(activeAccount.name)}\nE-Mail: ${activeAccount.email}\nBereich: ${getFeedbackCategoryLabel(category, "de", COPY.de)}\n\nVorschlag:\n${suggestion}`,
       );
       window.location.href = `mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`;
     }
@@ -1427,7 +1434,7 @@ export default function Page() {
       return;
     }
 
-    const title = proposalTitle.trim();
+    const title = restoreGermanUmlauts(proposalTitle.trim());
     const points = Number(proposalPoints);
 
     if (!title || Number.isNaN(points) || points < 1) {
@@ -1439,7 +1446,7 @@ export default function Page() {
       const proposal = {
         id: crypto.randomUUID(),
         createdBy: current.activeAccountId,
-        createdByName: activeAccount.name,
+        createdByName: restoreGermanUmlauts(activeAccount.name),
         category: proposalCategory,
         title,
         proposedPoints: points,
