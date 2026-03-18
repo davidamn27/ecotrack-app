@@ -170,15 +170,53 @@ const CACHE_BUSTER_SCRIPT = `
   try {
     var version = ${JSON.stringify(APP_VERSION)};
     var key = "ecotrack-app-version";
+    var appStorageKeys = [
+      "ecoboard-data-v7",
+      "ecoboard-language-v1",
+      "ecoboard-session-account-v1"
+    ];
     var url = new URL(window.location.href);
     var currentVersion = url.searchParams.get("v");
     var storedVersion = window.localStorage.getItem(key);
 
+    function clearClientState() {
+      appStorageKeys.forEach(function (storageKey) {
+        try {
+          window.localStorage.removeItem(storageKey);
+          window.sessionStorage.removeItem(storageKey);
+        } catch (error) {
+          console.warn("EcoTrack storage reset skipped for", storageKey, error);
+        }
+      });
+
+      if ("caches" in window) {
+        window.caches.keys().then(function (names) {
+          names.forEach(function (name) {
+            window.caches.delete(name);
+          });
+        }).catch(function (error) {
+          console.warn("EcoTrack cache cleanup skipped", error);
+        });
+      }
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          registrations.forEach(function (registration) {
+            registration.unregister();
+          });
+        }).catch(function (error) {
+          console.warn("EcoTrack service worker cleanup skipped", error);
+        });
+      }
+    }
+
+    if (storedVersion && storedVersion !== version) {
+      clearClientState();
+    }
+
     if (currentVersion !== version) {
       url.searchParams.set("v", version);
-      if (storedVersion && storedVersion !== version) {
-        url.searchParams.set("refresh", "1");
-      }
+      url.searchParams.set("refresh", "1");
       window.localStorage.setItem(key, version);
       window.location.replace(url.toString());
       return;
