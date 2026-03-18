@@ -2578,42 +2578,57 @@ function DashboardPanel({
           <div className="export-filter-grid">
             <label>
               {copy.dashboard.exportFilterPreset}
-              <select
-                value={exportRangePreset}
-                onChange={(event) => setExportRangePreset(event.target.value)}
-              >
-                <option value="all">{copy.dashboard.exportFilterAll}</option>
-                <option value="today">{copy.dashboard.exportFilterToday}</option>
-                <option value="7d">{copy.dashboard.exportFilter7Days}</option>
-                <option value="30d">{copy.dashboard.exportFilter30Days}</option>
-                <option value="90d">{copy.dashboard.exportFilter90Days}</option>
-                <option value="thisMonth">{copy.dashboard.exportFilterThisMonth}</option>
-                <option value="lastMonth">{copy.dashboard.exportFilterLastMonth}</option>
-                <option value="year">{copy.dashboard.exportFilterYear}</option>
-                <option value="custom">{copy.dashboard.exportFilterCustom}</option>
-              </select>
+              <div className="export-input-wrap">
+                <span className="export-input-icon" aria-hidden="true">
+                  <FieldIcon kind="select" />
+                </span>
+                <select
+                  value={exportRangePreset}
+                  onChange={(event) => setExportRangePreset(event.target.value)}
+                >
+                  <option value="all">{copy.dashboard.exportFilterAll}</option>
+                  <option value="today">{copy.dashboard.exportFilterToday}</option>
+                  <option value="7d">{copy.dashboard.exportFilter7Days}</option>
+                  <option value="30d">{copy.dashboard.exportFilter30Days}</option>
+                  <option value="90d">{copy.dashboard.exportFilter90Days}</option>
+                  <option value="thisMonth">{copy.dashboard.exportFilterThisMonth}</option>
+                  <option value="lastMonth">{copy.dashboard.exportFilterLastMonth}</option>
+                  <option value="year">{copy.dashboard.exportFilterYear}</option>
+                  <option value="custom">{copy.dashboard.exportFilterCustom}</option>
+                </select>
+              </div>
             </label>
             <label>
               {copy.dashboard.exportFilterFrom}
-              <input
-                type="date"
-                value={exportDateFrom}
-                onChange={(event) => {
-                  setExportRangePreset("custom");
-                  setExportDateFrom(event.target.value);
-                }}
-              />
+              <div className="export-input-wrap">
+                <span className="export-input-icon" aria-hidden="true">
+                  <FieldIcon kind="calendar" />
+                </span>
+                <input
+                  type="date"
+                  value={exportDateFrom}
+                  onChange={(event) => {
+                    setExportRangePreset("custom");
+                    setExportDateFrom(event.target.value);
+                  }}
+                />
+              </div>
             </label>
             <label>
               {copy.dashboard.exportFilterTo}
-              <input
-                type="date"
-                value={exportDateTo}
-                onChange={(event) => {
-                  setExportRangePreset("custom");
-                  setExportDateTo(event.target.value);
-                }}
-              />
+              <div className="export-input-wrap">
+                <span className="export-input-icon" aria-hidden="true">
+                  <FieldIcon kind="calendar" />
+                </span>
+                <input
+                  type="date"
+                  value={exportDateTo}
+                  onChange={(event) => {
+                    setExportRangePreset("custom");
+                    setExportDateTo(event.target.value);
+                  }}
+                />
+              </div>
             </label>
           </div>
         </div>
@@ -2749,6 +2764,24 @@ function DashboardPanel({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function FieldIcon({ kind }) {
+  if (kind === "calendar") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="3" />
+        <path d="M8 3v4M16 3v4M3 10h18" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 10l5 5 5-5" />
+      <path d="M7 14l5 5 5-5" opacity="0" />
+    </svg>
   );
 }
 
