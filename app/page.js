@@ -165,12 +165,11 @@ const COPY = {
       exportFilterYear: "Dieses Jahr",
       exportFilterCustom: "Eigener Zeitraum",
       exportFilterActive: (label, count) => `${label} • ${count} Einträge im Export`,
-      exportQuickTitle: "Schnellauswahl",
       exportPreviewTitle: "Export-Vorschau",
       exportPreviewEntries: "Einträge",
       exportPreviewUsers: "Nutzer",
       exportPreviewModeUser: "Nutzer-Export",
-      exportPreviewModeAdmin: "Admin-Gesamtexport",
+      exportPreviewModeAdmin: "Admin-Export",
       today: "Heute",
       week: "Woche",
       month: "Monat",
@@ -444,12 +443,11 @@ const COPY = {
       exportFilterYear: "This year",
       exportFilterCustom: "Custom range",
       exportFilterActive: (label, count) => `${label} • ${count} entries in export`,
-      exportQuickTitle: "Quick select",
       exportPreviewTitle: "Export preview",
       exportPreviewEntries: "Entries",
       exportPreviewUsers: "Users",
       exportPreviewModeUser: "User export",
-      exportPreviewModeAdmin: "Admin full export",
+      exportPreviewModeAdmin: "Admin export",
       today: "Today",
       week: "Week",
       month: "Month",
@@ -870,6 +868,16 @@ export default function Page() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (exportRangePreset === "custom") {
+      return;
+    }
+
+    const range = getPresetDateRange(exportRangePreset);
+    setExportDateFrom(range.from);
+    setExportDateTo(range.to);
+  }, [exportRangePreset]);
 
   useEffect(() => {
     if (hasHydratedState || remoteAppState === undefined) {
@@ -2556,7 +2564,7 @@ function DashboardPanel({
           <div className="export-preview-grid">
             <article className="metric-card export-preview-card accent-card">
               <p className="metric-label">{copy.dashboard.exportPreviewTitle}</p>
-              <p className="metric-value">{copy.dashboard.exportPreviewModeAdmin}</p>
+              <p className="metric-value export-preview-mode">{copy.dashboard.exportPreviewModeAdmin}</p>
             </article>
             <article className="metric-card export-preview-card">
               <p className="metric-label">{copy.dashboard.exportPreviewEntries}</p>
@@ -2566,43 +2574,6 @@ function DashboardPanel({
               <p className="metric-label">{copy.dashboard.exportPreviewUsers}</p>
               <p className="metric-value">{adminUserCount}</p>
             </article>
-          </div>
-          <div className="export-quick-row" aria-label={copy.dashboard.exportQuickTitle}>
-            <button
-              type="button"
-              className={`micro-button${exportRangePreset === "today" ? " active" : ""}`}
-              onClick={() => setExportRangePreset("today")}
-            >
-              {copy.dashboard.exportFilterToday}
-            </button>
-            <button
-              type="button"
-              className={`micro-button${exportRangePreset === "thisMonth" ? " active" : ""}`}
-              onClick={() => setExportRangePreset("thisMonth")}
-            >
-              {copy.dashboard.exportFilterThisMonth}
-            </button>
-            <button
-              type="button"
-              className={`micro-button${exportRangePreset === "lastMonth" ? " active" : ""}`}
-              onClick={() => setExportRangePreset("lastMonth")}
-            >
-              {copy.dashboard.exportFilterLastMonth}
-            </button>
-            <button
-              type="button"
-              className={`micro-button${exportRangePreset === "7d" ? " active" : ""}`}
-              onClick={() => setExportRangePreset("7d")}
-            >
-              {copy.dashboard.exportFilter7Days}
-            </button>
-            <button
-              type="button"
-              className={`micro-button${exportRangePreset === "30d" ? " active" : ""}`}
-              onClick={() => setExportRangePreset("30d")}
-            >
-              {copy.dashboard.exportFilter30Days}
-            </button>
           </div>
           <div className="export-filter-grid">
             <label>
@@ -3817,6 +3788,56 @@ function parseDateInput(value, endOfDay = false) {
 
   const parsed = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getPresetDateRange(preset) {
+  const today = new Date();
+  const format = (value) => toDayKey(value);
+
+  if (preset === "all") {
+    return { from: "", to: "" };
+  }
+
+  if (preset === "today") {
+    const day = format(today);
+    return { from: day, to: day };
+  }
+
+  if (preset === "7d") {
+    const from = new Date(today);
+    from.setDate(from.getDate() - 6);
+    return { from: format(from), to: format(today) };
+  }
+
+  if (preset === "30d") {
+    const from = new Date(today);
+    from.setDate(from.getDate() - 29);
+    return { from: format(from), to: format(today) };
+  }
+
+  if (preset === "90d") {
+    const from = new Date(today);
+    from.setDate(from.getDate() - 89);
+    return { from: format(from), to: format(today) };
+  }
+
+  if (preset === "thisMonth") {
+    const from = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { from: format(from), to: format(today) };
+  }
+
+  if (preset === "lastMonth") {
+    const from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const to = new Date(today.getFullYear(), today.getMonth(), 0);
+    return { from: format(from), to: format(to) };
+  }
+
+  if (preset === "year") {
+    const from = new Date(today.getFullYear(), 0, 1);
+    return { from: format(from), to: format(today) };
+  }
+
+  return { from: "", to: "" };
 }
 
 function getExportRangeLabel(preset, copy) {

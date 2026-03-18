@@ -424,13 +424,6 @@ select:focus {
   gap: 1rem;
 }
 
-.export-quick-row {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.9rem;
-}
-
 .export-preview-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -442,6 +435,11 @@ select:focus {
   min-height: 7.2rem;
 }
 
+.export-preview-mode {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+}
+
 .export-filter-head {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
@@ -450,6 +448,16 @@ select:focus {
 
 .export-filter-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.export-filter-grid label {
+  height: 100%;
+}
+
+.export-filter-grid input,
+.export-filter-grid select {
+  min-height: 5.2rem;
 }
 
 .login-state,
@@ -1500,15 +1508,13 @@ button:disabled {
   }
 
   .micro-nav,
-  .batch-actions,
-  .export-quick-row {
+  .batch-actions {
     display: grid;
     grid-template-columns: 1fr;
     width: 100%;
   }
 
   .micro-button,
-  .export-quick-row .micro-button,
   .batch-actions .secondary-button,
   .batch-actions .primary-button,
   .batch-remove,
