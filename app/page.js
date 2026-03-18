@@ -8,7 +8,6 @@ const STORAGE_KEY = "ecoboard-data-v7";
 const LANGUAGE_KEY = "ecoboard-language-v1";
 const SESSION_ACCOUNT_KEY = "ecoboard-session-account-v1";
 const SESSION_VIEW_KEY = "ecoboard-session-view-v1";
-const DEVELOPER_EMAIL = "davidammann@web.de";
 const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
 const LEGACY_STORAGE_KEYS = [];
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -740,7 +739,7 @@ export default function Page() {
     api.activityTracking.getUserEntries,
     activeAccount?.backendUserId ? { userId: activeAccount.backendUserId } : "skip",
   );
-  const canAdminExport = observerMode || activeAccount?.email === DEVELOPER_EMAIL;
+  const canAdminExport = observerMode;
   const convexUsers = useQuery(api.users.list, canAdminExport ? {} : "skip");
   const convexAllActivityEntries = useQuery(
     api.activityTracking.getAllEntries,
