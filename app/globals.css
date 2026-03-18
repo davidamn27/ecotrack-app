@@ -426,18 +426,41 @@ select:focus {
 
 .export-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 190px);
   gap: 1rem;
+  justify-content: start;
   margin-bottom: 0.9rem;
 }
 
 .export-preview-card {
-  min-height: 7.2rem;
+  height: 160px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  overflow: hidden;
+}
+
+.export-preview-card .metric-label {
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.export-preview-card .metric-value {
+  margin-top: 0;
+  font-size: clamp(1.4rem, 1.8vw, 1.8rem);
+  line-height: 1.1;
+  font-weight: 800;
 }
 
 .export-preview-mode {
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.05;
+  font-size: clamp(1.4rem, 1.8vw, 1.8rem) !important;
+  line-height: 1.1;
+  font-weight: 800;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .export-filter-head {
