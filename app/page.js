@@ -1218,6 +1218,11 @@ export default function Page() {
       );
       XLSX.utils.book_append_sheet(
         workbook,
+        XLSX.utils.json_to_sheet(exportData.monthRows),
+        exportData.sheetNames.months,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
         XLSX.utils.json_to_sheet(exportData.entryRows),
         exportData.sheetNames.entries,
       );
@@ -3964,6 +3969,14 @@ function buildActivityExportWorkbook({ entries, account, language = "de" }) {
         [labels.summary.metric]: labels.summary.lastEntry,
         [labels.summary.value]: lastEntry ? formatDateTime(lastEntry.createdAtIso, language) : labels.empty,
       },
+      {
+        [labels.summary.metric]: labels.summary.firstActivityTitle,
+        [labels.summary.value]: firstEntry ? firstEntry.title : labels.empty,
+      },
+      {
+        [labels.summary.metric]: labels.summary.lastActivityTitle,
+        [labels.summary.value]: lastEntry ? lastEntry.title : labels.empty,
+      },
     ],
     categoryRows: Array.from(categoryMap.entries())
       .map(([category, values]) => ({
@@ -3980,8 +3993,11 @@ function buildActivityExportWorkbook({ entries, account, language = "de" }) {
       }))
       .sort((left, right) => right[labels.months.month].localeCompare(left[labels.months.month])),
     entryRows: normalizedEntries.map((entry) => ({
+      [labels.entries.user]: account.name,
+      [labels.entries.email]: account.email,
       [labels.entries.date]: formatDate(entry.createdAtIso, language),
       [labels.entries.time]: formatDateTime(entry.createdAtIso, language),
+      [labels.entries.timestamp]: entry.createdAtIso,
       [labels.entries.category]: getCategoryLabel(entry.category, language),
       [labels.entries.activity]: entry.title,
       [labels.entries.points]: entry.points,
@@ -4030,6 +4046,7 @@ function buildCommunityExportWorkbook({ users, entries, language = "de" }) {
     ]),
   );
   const categoryStats = new Map();
+  const monthStats = new Map();
 
   normalizedEntries.forEach((entry) => {
     const stats = userStats.get(entry.userId) || { activities: 0, points: 0, lastActivityAt: null };
@@ -4045,7 +4062,16 @@ function buildCommunityExportWorkbook({ users, entries, language = "de" }) {
     currentCategory.activities += 1;
     currentCategory.points += entry.points;
     categoryStats.set(categoryLabel, currentCategory);
+
+    const monthKey = entry.dateKey.slice(0, 7);
+    const currentMonth = monthStats.get(monthKey) || { activities: 0, points: 0 };
+    currentMonth.activities += 1;
+    currentMonth.points += entry.points;
+    monthStats.set(monthKey, currentMonth);
   });
+
+  const firstEntry = normalizedEntries[normalizedEntries.length - 1];
+  const lastEntry = normalizedEntries[0];
 
   return {
     sheetNames: labels.sheetNames,
@@ -4056,6 +4082,22 @@ function buildCommunityExportWorkbook({ users, entries, language = "de" }) {
       {
         [labels.summary.metric]: labels.summary.totalPoints,
         [labels.summary.value]: normalizedEntries.reduce((sum, entry) => sum + entry.points, 0),
+      },
+      {
+        [labels.summary.metric]: labels.summary.firstEntry,
+        [labels.summary.value]: firstEntry ? formatDateTime(firstEntry.createdAtIso, language) : labels.empty,
+      },
+      {
+        [labels.summary.metric]: labels.summary.lastEntry,
+        [labels.summary.value]: lastEntry ? formatDateTime(lastEntry.createdAtIso, language) : labels.empty,
+      },
+      {
+        [labels.summary.metric]: labels.summary.firstActivityTitle,
+        [labels.summary.value]: firstEntry ? `${firstEntry.user.name}: ${firstEntry.title}` : labels.empty,
+      },
+      {
+        [labels.summary.metric]: labels.summary.lastActivityTitle,
+        [labels.summary.value]: lastEntry ? `${lastEntry.user.name}: ${lastEntry.title}` : labels.empty,
       },
     ],
     userRows: users
@@ -4084,11 +4126,20 @@ function buildCommunityExportWorkbook({ users, entries, language = "de" }) {
         [labels.categories.points]: values.points,
       }))
       .sort((left, right) => right[labels.categories.points] - left[labels.categories.points]),
+    monthRows: Array.from(monthStats.entries())
+      .map(([month, values]) => ({
+        [labels.months.month]: month,
+        [labels.months.activities]: values.activities,
+        [labels.months.points]: values.points,
+      }))
+      .sort((left, right) => right[labels.months.month].localeCompare(left[labels.months.month])),
     entryRows: normalizedEntries.map((entry) => ({
+      [labels.entries.userId]: entry.user.id,
       [labels.entries.user]: entry.user.name,
       [labels.entries.email]: entry.user.email,
       [labels.entries.date]: formatDate(entry.createdAtIso, language),
       [labels.entries.time]: formatDateTime(entry.createdAtIso, language),
+      [labels.entries.timestamp]: entry.createdAtIso,
       [labels.entries.category]: getCategoryLabel(entry.category, language),
       [labels.entries.activity]: entry.title,
       [labels.entries.points]: entry.points,
@@ -4121,6 +4172,8 @@ function getExcelLabels(language = "de") {
         monthPoints: "Points last 30 days",
         firstEntry: "First activity",
         lastEntry: "Latest activity",
+        firstActivityTitle: "First activity title",
+        lastActivityTitle: "Latest activity title",
       },
       categories: {
         category: "Category",
@@ -4133,8 +4186,11 @@ function getExcelLabels(language = "de") {
         points: "Points",
       },
       entries: {
+        user: "User",
+        email: "Email",
         date: "Date",
         time: "Date and time",
+        timestamp: "ISO timestamp",
         category: "Category",
         activity: "Activity",
         points: "Points",
@@ -4165,6 +4221,8 @@ function getExcelLabels(language = "de") {
       monthPoints: "Punkte letzte 30 Tage",
       firstEntry: "Erste Aktivität",
       lastEntry: "Neueste Aktivität",
+      firstActivityTitle: "Titel der ersten Aktivität",
+      lastActivityTitle: "Titel der neuesten Aktivität",
     },
     categories: {
       category: "Kategorie",
@@ -4177,8 +4235,11 @@ function getExcelLabels(language = "de") {
       points: "Punkte",
     },
     entries: {
+      user: "Nutzer",
+      email: "E-Mail",
       date: "Datum",
       time: "Datum und Uhrzeit",
+      timestamp: "ISO-Zeitstempel",
       category: "Kategorie",
       activity: "Aktivität",
       points: "Punkte",
@@ -4197,6 +4258,7 @@ function getCommunityExcelLabels(language = "de") {
         summary: "Summary",
         users: "Users",
         categories: "Categories",
+        months: "Months",
         entries: "Activities",
       },
       summary: {
@@ -4206,6 +4268,10 @@ function getCommunityExcelLabels(language = "de") {
         users: "Users",
         activities: "Activities",
         totalPoints: "Total points",
+        firstEntry: "First activity",
+        lastEntry: "Latest activity",
+        firstActivityTitle: "First activity title",
+        lastActivityTitle: "Latest activity title",
       },
       users: {
         name: "Name",
@@ -4222,11 +4288,18 @@ function getCommunityExcelLabels(language = "de") {
         activities: "Activities",
         points: "Points",
       },
+      months: {
+        month: "Month",
+        activities: "Activities",
+        points: "Points",
+      },
       entries: {
+        userId: "User ID",
         user: "User",
         email: "Email",
         date: "Date",
         time: "Date and time",
+        timestamp: "ISO timestamp",
         category: "Category",
         activity: "Activity",
         points: "Points",
@@ -4243,6 +4316,7 @@ function getCommunityExcelLabels(language = "de") {
       summary: "Zusammenfassung",
       users: "Nutzer",
       categories: "Kategorien",
+      months: "Monate",
       entries: "Aktivitäten",
     },
     summary: {
@@ -4252,6 +4326,10 @@ function getCommunityExcelLabels(language = "de") {
       users: "Nutzer",
       activities: "Aktivitäten",
       totalPoints: "Punkte gesamt",
+      firstEntry: "Erste Aktivität",
+      lastEntry: "Neueste Aktivität",
+      firstActivityTitle: "Titel der ersten Aktivität",
+      lastActivityTitle: "Titel der neuesten Aktivität",
     },
     users: {
       name: "Name",
@@ -4268,11 +4346,18 @@ function getCommunityExcelLabels(language = "de") {
       activities: "Aktivitäten",
       points: "Punkte",
     },
+    months: {
+      month: "Monat",
+      activities: "Aktivitäten",
+      points: "Punkte",
+    },
     entries: {
+      userId: "Nutzer-ID",
       user: "Nutzer",
       email: "E-Mail",
       date: "Datum",
       time: "Datum und Uhrzeit",
+      timestamp: "ISO-Zeitstempel",
       category: "Kategorie",
       activity: "Aktivität",
       points: "Punkte",
