@@ -707,7 +707,6 @@ export default function Page() {
   const [language, setLanguage] = useState("de");
   const [status, setStatus] = useState(COPY.de.status.loginFirst);
   const [authMode, setAuthMode] = useState("register");
-  const [observerMode, setObserverMode] = useState(false);
   const [view, setView] = useState("sustainability");
   const [selectedCategory, setSelectedCategory] = useState("mobility");
   const [feedbackCategory, setFeedbackCategory] = useState("general");
@@ -738,7 +737,7 @@ export default function Page() {
     api.activityTracking.getUserEntries,
     activeAccount?.backendUserId ? { userId: activeAccount.backendUserId } : "skip",
   );
-  const canAdminExport = observerMode || activeAccount?.email === DEVELOPER_EMAIL;
+  const canAdminExport = activeAccount?.email === DEVELOPER_EMAIL;
   const convexUsers = useQuery(api.users.list, canAdminExport ? {} : "skip");
   const convexAllActivityEntries = useQuery(
     api.activityTracking.getAllEntries,
@@ -832,7 +831,7 @@ export default function Page() {
     setStoredSessionAccountId(appState.activeAccountId || null);
   }, [appState.activeAccountId, hasHydratedState]);
 
-  const sessionAccount = activeAccount || (observerMode ? createObserverAccount(copy) : null);
+  const sessionAccount = activeAccount;
   const leaderboard = getLeaderboardData(appState.accounts);
   const activeStats = sessionAccount ? getAccountStats(sessionAccount, language) : createEmptyStats(language);
   const activeRank = activeAccount
@@ -949,15 +948,8 @@ export default function Page() {
       activeAccountId: null,
     }));
 
-    setObserverMode(false);
     setView("sustainability");
     setStatus(copy.status.loggedOut);
-  }
-
-  function handleObserverAccess() {
-    setObserverMode(true);
-    setView("dashboard");
-    setStatus(copy.status.signedIn);
   }
 
   async function handleUpdateProfile(event) {
@@ -1617,9 +1609,7 @@ export default function Page() {
       <div className="auth-shell">
         <section className="auth-stage">
           <div className="auth-copy">
-            <p className="eyebrow" onDoubleClick={handleObserverAccess}>
-              EcoTrack
-            </p>
+            <p className="eyebrow">EcoTrack</p>
             <h1>{copy.auth.title}</h1>
             <p className="auth-text">{copy.auth.text}</p>
             <div className="language-block">
@@ -3491,20 +3481,6 @@ function convertLegacyEntries(entries) {
 
 function getActiveAccount(appState) {
   return appState.accounts.find((account) => account.id === appState.activeAccountId) || null;
-}
-
-function createObserverAccount(copy) {
-  return {
-    id: "observer-view",
-    backendUserId: null,
-    name: copy.auth.observerLabel,
-    email: "",
-    city: "",
-    age: "",
-    password: "",
-    createdAt: new Date().toISOString(),
-    activities: [],
-  };
 }
 
 function getLeaderboardData(accounts) {
