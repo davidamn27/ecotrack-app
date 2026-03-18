@@ -297,7 +297,7 @@ const COPY = {
       customProposal: (title, points) =>
         `hat eine Custom-Aktivität vorgeschlagen: "${title}" mit ${points} Punkten. Bitte abstimmen.`,
       developerMailOpened: (title) =>
-        `Mail-Entwurf fuer "${title}" an ${DEVELOPER_EMAIL} wurde geoeffnet.`,
+        `Mail-Entwurf für "${title}" an ${DEVELOPER_EMAIL} wurde geöffnet.`,
       messageSent: "Nachricht gesendet.",
       voteSaved: (points) => `Deine Abstimmung mit ${points} Punkten wurde gespeichert.`,
       proposalApproved: (title) => `Du stimmst "${title}" zu.`,
@@ -1367,7 +1367,7 @@ export default function Page() {
     if (typeof window !== "undefined") {
       const subject = encodeURIComponent(`EcoTrack Vorschlag: ${title}`);
       const body = encodeURIComponent(
-        `Neuer Aktivitaetsvorschlag fuer EcoTrack\n\nKategorie: ${getCategoryLabel(category, "de")}\nAktivitaet: ${title}\nVorgeschlagene Punkte: ${points}\nEingereicht von: ${activeAccount.name} (${activeAccount.email})`,
+        `Neuer Aktivitätsvorschlag für EcoTrack\n\nKategorie: ${getCategoryLabel(category, "de")}\nAktivität: ${title}\nVorgeschlagene Punkte: ${points}\nEingereicht von: ${activeAccount.name} (${activeAccount.email})`,
       );
       window.location.href = `mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`;
     }
@@ -1410,7 +1410,7 @@ export default function Page() {
     if (typeof window !== "undefined") {
       const subject = encodeURIComponent(`EcoTrack Verbesserungsvorschlag von ${activeAccount.name}`);
       const body = encodeURIComponent(
-        `Verbesserungsvorschlag fuer EcoTrack\n\nUser-Name: ${activeAccount.name}\nE-Mail: ${activeAccount.email}\nBereich: ${getFeedbackCategoryLabel(category, "de", COPY.de)}\n\nVorschlag:\n${suggestion}`,
+        `Verbesserungsvorschlag für EcoTrack\n\nUser-Name: ${activeAccount.name}\nE-Mail: ${activeAccount.email}\nBereich: ${getFeedbackCategoryLabel(category, "de", COPY.de)}\n\nVorschlag:\n${suggestion}`,
       );
       window.location.href = `mailto:${DEVELOPER_EMAIL}?subject=${subject}&body=${body}`;
     }
@@ -4064,7 +4064,7 @@ function getExcelLabels(language = "de") {
       summary: "Zusammenfassung",
       categories: "Kategorien",
       months: "Monate",
-      entries: "Aktivitaeten",
+      entries: "Aktivitäten",
     },
     summary: {
       metric: "Kennzahl",
@@ -4072,32 +4072,32 @@ function getExcelLabels(language = "de") {
       user: "Nutzer",
       email: "E-Mail",
       exportedAt: "Exportiert am",
-      activities: "Aktivitaeten",
+      activities: "Aktivitäten",
       totalPoints: "Punkte gesamt",
       todayPoints: "Punkte heute",
       weekPoints: "Punkte letzte 7 Tage",
       monthPoints: "Punkte letzte 30 Tage",
-      firstEntry: "Erste Aktivitaet",
-      lastEntry: "Neueste Aktivitaet",
+      firstEntry: "Erste Aktivität",
+      lastEntry: "Neueste Aktivität",
     },
     categories: {
       category: "Kategorie",
-      activities: "Aktivitaeten",
+      activities: "Aktivitäten",
       points: "Punkte",
     },
     months: {
       month: "Monat",
-      activities: "Aktivitaeten",
+      activities: "Aktivitäten",
       points: "Punkte",
     },
     entries: {
       date: "Datum",
       time: "Datum und Uhrzeit",
       category: "Kategorie",
-      activity: "Aktivitaet",
+      activity: "Aktivität",
       points: "Punkte",
       note: "Notiz",
-      dateKey: "Datumsschluessel",
+      dateKey: "Datumsschlüssel",
     },
   };
 }
@@ -4157,14 +4157,14 @@ function getCommunityExcelLabels(language = "de") {
       summary: "Zusammenfassung",
       users: "Nutzer",
       categories: "Kategorien",
-      entries: "Aktivitaeten",
+      entries: "Aktivitäten",
     },
     summary: {
       metric: "Kennzahl",
       value: "Wert",
       exportedAt: "Exportiert am",
       users: "Nutzer",
-      activities: "Aktivitaeten",
+      activities: "Aktivitäten",
       totalPoints: "Punkte gesamt",
     },
     users: {
@@ -4173,13 +4173,13 @@ function getCommunityExcelLabels(language = "de") {
       city: "Stadt",
       age: "Alter",
       registeredAt: "Registriert am",
-      activities: "Aktivitaeten",
+      activities: "Aktivitäten",
       points: "Punkte",
-      lastActivity: "Neueste Aktivitaet",
+      lastActivity: "Neueste Aktivität",
     },
     categories: {
       category: "Kategorie",
-      activities: "Aktivitaeten",
+      activities: "Aktivitäten",
       points: "Punkte",
     },
     entries: {
@@ -4188,10 +4188,10 @@ function getCommunityExcelLabels(language = "de") {
       date: "Datum",
       time: "Datum und Uhrzeit",
       category: "Kategorie",
-      activity: "Aktivitaet",
+      activity: "Aktivität",
       points: "Punkte",
       note: "Notiz",
-      dateKey: "Datumsschluessel",
+      dateKey: "Datumsschlüssel",
     },
   };
 }
