@@ -374,6 +374,7 @@ export const seedData = mutation({
     const startTimestamp = startDate.getTime();
 
     const targetUsers = [];
+    const skippedExistingProfiles = [];
     let usersCreated = 0;
     let usersUpdated = 0;
 
@@ -382,10 +383,10 @@ export const seedData = mutation({
         .query("users")
         .withIndex("by_email", (q) => q.eq("email", profile.email))
         .unique();
+      const shouldPreserveProfile = LOCK_EXISTING_PROFILE_EMAILS.has(profile.email);
 
       let userId;
       if (existing) {
-        const shouldPreserveProfile = LOCK_EXISTING_PROFILE_EMAILS.has(profile.email);
         await ctx.db.patch(existing._id, shouldPreserveProfile
           ? {
               surveySurveyCompleted: true,
@@ -400,6 +401,12 @@ export const seedData = mutation({
             });
         userId = existing._id;
         usersUpdated += 1;
+      } else if (shouldPreserveProfile) {
+        skippedExistingProfiles.push({
+          email: profile.email,
+          name: profile.name,
+        });
+        continue;
       } else {
         userId = await ctx.db.insert("users", {
           name: profile.name,
@@ -667,6 +674,7 @@ export const seedData = mutation({
       deletedEntries,
       activitiesCreated,
       defaultPassword: TEST_PASSWORD,
+      skippedExistingProfiles,
       chatMessagesCreated: chatMessages.length,
       activityRequestsCreated: activityRequests.length,
       approvedActivitiesCreated: approvedActivities.length,

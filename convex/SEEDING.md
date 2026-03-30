@@ -30,8 +30,12 @@ Der Seed arbeitet mit allen explizit genannten Personen. In der Anforderung steh
 Die bereits registrierten Nutzer **Jens Ammann**, **Jan Ammann**, **Elijah Stauss** und **Moritz Kaltenstadler** behalten ihre vorhandenen Stammdaten.
 
 - Vorhandene Angaben wie Name, Wohnort, Alter und bisherige Profildaten werden nicht ueberschrieben.
+- Vorhandene Passwoerter werden ebenfalls nicht ueberschrieben.
+- Falls einer dieser vier Nutzer auf dem jeweiligen Deployment noch gar nicht existiert, wird er vom Seed nicht kuenstlich neu angelegt.
 - Der Seed nutzt diese bestehenden Profile nur als Basis fuer Aktivitaeten, Chat, Requests und den gesetzten Umfrage-Status.
 - Neu gepflegt oder sicher gesetzt werden bei diesen Nutzern nur die Referenzdaten rund um die Demo-Nutzung.
+
+Jana und Lisa bleiben dagegen bewusst als Seed-Testaccounts erhalten und werden bei Bedarf mit dem Passwort `test123` angelegt.
 
 ## Welche Logik hinter den Aktivitaeten steckt
 
