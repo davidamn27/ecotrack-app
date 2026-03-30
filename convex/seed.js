@@ -122,6 +122,20 @@ function createId(prefix, index) {
   return `${prefix}-${String(index).padStart(2, "0")}`;
 }
 
+function authoredEntry(accountByEmail, email, author, message, createdAt) {
+  const account = accountByEmail.get(email);
+  if (!account) {
+    return null;
+  }
+
+  return {
+    accountId: account.id,
+    author,
+    message,
+    createdAt,
+  };
+}
+
 async function removeUserActivityEntries(ctx, userId) {
   const entries = await ctx.db
     .query("activityEntries")
@@ -560,79 +574,20 @@ export const seedData = mutation({
     const accountByEmail = new Map(appStateAccounts.map((account) => [account.email, account]));
     const oneDay = startTimestamp + DAY_MS;
     const chatMessages = [
-      {
-        accountId: accountByEmail.get("jana.ammann@test.de").id,
-        author: "Jana Ammann",
-        message: "Ich finde es hilfreich, dass man die Wege wirklich nachhalten kann. In München sieht man sofort, wie oft Fahrrad und Tram den Alltag tragen.",
-        createdAt: toIso(oneDay + 8 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("ammann-jens@web.de").id,
-        author: "Jens Ammann",
-        message: "Bei mir auf dem Land geht ohne Auto nicht alles, aber ich kombiniere jetzt mehr Erledigungen und bilde öfter Fahrgemeinschaften. Das macht in den Punkten auch Sinn.",
-        createdAt: toIso(oneDay + 9 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("elijah.stauss@gmail.com").id,
-        author: "Elijah Stauss",
-        message: "Der Vergleich Stadt zu Umland ist spannend. Bei mir sind OePNV und Fahrrad fast immer die besten Optionen.",
-        createdAt: toIso(oneDay + 11 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("moritz.kaltenstadler@gmail.com").id,
-        author: "Moritz Kaltenstadler",
-        message: "Ich mag, dass auch kleine Dinge wie Mehrwegflasche oder Eco-Waesche zaehlen. Das fuehlt sich realistischer an als nur grosse Aktionen.",
-        createdAt: toIso(oneDay + 13 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("lisa.ammann@test.de").id,
-        author: "Lisa Ammann",
-        message: "Die Wochenansicht motiviert mich gerade voll. Vor allem wenn man sieht, dass viele kleine nachhaltige Entscheidungen zusammenkommen.",
-        createdAt: toIso(oneDay + 16 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("ammann.jan@web.de").id,
-        author: "Jan Ammann",
-        message: "Ich wuerde fuer Pendler noch kombinierte Wege staerker hervorheben. Gerade Bahn plus Fahrrad passt fuer Dachau ziemlich gut.",
-        createdAt: toIso(oneDay + 18 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("jana.ammann@test.de").id,
-        author: "Jana Ammann",
-        message: "Wochenmarkt und Meal-Prep sind bei mir inzwischen fester Teil der Routine. Das sieht man in der Verlaufskurve ganz gut.",
-        createdAt: toIso(oneDay + 2 * DAY_MS + 10 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("ammann-jens@web.de").id,
-        author: "Jens Ammann",
-        message: "Homeoffice an einzelnen Tagen hilft bei mir enorm. Dann faellt der lange Pendelweg komplett weg.",
-        createdAt: toIso(oneDay + 3 * DAY_MS + 8 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("elijah.stauss@gmail.com").id,
-        author: "Elijah Stauss",
-        message: "Vielleicht koennte man noch anzeigen, welche Kategorie in den letzten 7 Tagen am staerksten war.",
-        createdAt: toIso(oneDay + 4 * DAY_MS + 12 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("lisa.ammann@test.de").id,
-        author: "Lisa Ammann",
-        message: "Ich finde gut, dass nicht jede nachhaltige Aktivitaet gleich viele Punkte hat. Das wirkt nachvollziehbar.",
-        createdAt: toIso(oneDay + 5 * DAY_MS + 17 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("moritz.kaltenstadler@gmail.com").id,
-        author: "Moritz Kaltenstadler",
-        message: "Freising ist so ein Mittelding: mal Zug, mal Fahrrad, manchmal doch Auto. Genau deshalb taugt die App gut als Vergleichsbasis.",
-        createdAt: toIso(oneDay + 7 * DAY_MS + 9 * 60 * 60 * 1000),
-      },
-      {
-        accountId: accountByEmail.get("ammann.jan@web.de").id,
-        author: "Jan Ammann",
-        message: "Die Exportfunktion koennte fuer die Auswertung richtig praktisch sein. Vor allem wenn man die 14 Tage sauber vergleichen will.",
-        createdAt: toIso(oneDay + 8 * DAY_MS + 18 * 60 * 60 * 1000),
-      },
+      authoredEntry(accountByEmail, "jana.ammann@test.de", "Jana Ammann", "Ich finde es hilfreich, dass man die Wege wirklich nachhalten kann. In München sieht man sofort, wie oft Fahrrad und Tram den Alltag tragen.", toIso(oneDay + 8 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "ammann-jens@web.de", "Jens Ammann", "Bei mir auf dem Land geht ohne Auto nicht alles, aber ich kombiniere jetzt mehr Erledigungen und bilde öfter Fahrgemeinschaften. Das macht in den Punkten auch Sinn.", toIso(oneDay + 9 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "elijah.stauss@gmail.com", "Elijah Stauss", "Der Vergleich Stadt zu Umland ist spannend. Bei mir sind OePNV und Fahrrad fast immer die besten Optionen.", toIso(oneDay + 11 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "moritz.kaltenstadler@gmail.com", "Moritz Kaltenstadler", "Ich mag, dass auch kleine Dinge wie Mehrwegflasche oder Eco-Waesche zaehlen. Das fuehlt sich realistischer an als nur grosse Aktionen.", toIso(oneDay + 13 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "lisa.ammann@test.de", "Lisa Ammann", "Die Wochenansicht motiviert mich gerade voll. Vor allem wenn man sieht, dass viele kleine nachhaltige Entscheidungen zusammenkommen.", toIso(oneDay + 16 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "ammann.jan@web.de", "Jan Ammann", "Ich wuerde fuer Pendler noch kombinierte Wege staerker hervorheben. Gerade Bahn plus Fahrrad passt fuer Dachau ziemlich gut.", toIso(oneDay + 18 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "jana.ammann@test.de", "Jana Ammann", "Wochenmarkt und Meal-Prep sind bei mir inzwischen fester Teil der Routine. Das sieht man in der Verlaufskurve ganz gut.", toIso(oneDay + 2 * DAY_MS + 10 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "ammann-jens@web.de", "Jens Ammann", "Homeoffice an einzelnen Tagen hilft bei mir enorm. Dann faellt der lange Pendelweg komplett weg.", toIso(oneDay + 3 * DAY_MS + 8 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "elijah.stauss@gmail.com", "Elijah Stauss", "Vielleicht koennte man noch anzeigen, welche Kategorie in den letzten 7 Tagen am staerksten war.", toIso(oneDay + 4 * DAY_MS + 12 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "lisa.ammann@test.de", "Lisa Ammann", "Ich finde gut, dass nicht jede nachhaltige Aktivitaet gleich viele Punkte hat. Das wirkt nachvollziehbar.", toIso(oneDay + 5 * DAY_MS + 17 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "moritz.kaltenstadler@gmail.com", "Moritz Kaltenstadler", "Freising ist so ein Mittelding: mal Zug, mal Fahrrad, manchmal doch Auto. Genau deshalb taugt die App gut als Vergleichsbasis.", toIso(oneDay + 7 * DAY_MS + 9 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "ammann.jan@web.de", "Jan Ammann", "Die Exportfunktion koennte fuer die Auswertung richtig praktisch sein. Vor allem wenn man die 14 Tage sauber vergleichen will.", toIso(oneDay + 8 * DAY_MS + 18 * 60 * 60 * 1000)),
     ]
+      .filter(Boolean)
       .map((entry, index) => ({
         id: createId("chat", index + 1),
         ...entry,
@@ -640,7 +595,7 @@ export const seedData = mutation({
       .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 
     const activityRequests = [
-      {
+      accountByEmail.get("ammann.jan@web.de") && {
         category: "mobility",
         title: "Park and Ride statt Direktfahrt",
         proposedPoints: 2,
@@ -648,7 +603,7 @@ export const seedData = mutation({
         createdByName: "Jan Ammann",
         createdAt: toIso(oneDay + 6 * DAY_MS + 15 * 60 * 60 * 1000),
       },
-      {
+      accountByEmail.get("jana.ammann@test.de") && {
         category: "nutrition",
         title: "Wochenmenue geplant statt spontane Bestellung",
         proposedPoints: 2,
@@ -656,7 +611,7 @@ export const seedData = mutation({
         createdByName: "Jana Ammann",
         createdAt: toIso(oneDay + 7 * DAY_MS + 14 * 60 * 60 * 1000),
       },
-      {
+      accountByEmail.get("moritz.kaltenstadler@gmail.com") && {
         category: "household",
         title: "Steckdosenleiste mit Schalter konsequent genutzt",
         proposedPoints: 2,
@@ -664,7 +619,7 @@ export const seedData = mutation({
         createdByName: "Moritz Kaltenstadler",
         createdAt: toIso(oneDay + 9 * DAY_MS + 10 * 60 * 60 * 1000),
       },
-      {
+      accountByEmail.get("lisa.ammann@test.de") && {
         category: "individual",
         title: "Leitungswasser unterwegs nachgefuellt",
         proposedPoints: 1,
@@ -673,6 +628,7 @@ export const seedData = mutation({
         createdAt: toIso(oneDay + 10 * DAY_MS + 11 * 60 * 60 * 1000),
       },
     ]
+      .filter(Boolean)
       .map((entry, index) => ({
         id: createId("request", index + 1),
         ...entry,
