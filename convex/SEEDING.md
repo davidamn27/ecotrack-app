@@ -10,8 +10,8 @@ Der Seed arbeitet mit allen explizit genannten Personen. In der Anforderung steh
 - **Jan Ammann** - `ammann.jan@web.de` - Dachau - S-Bahn, Fahrrad und Homeoffice-Mix
 - **Elijah Stauss** - `elijah.stauss@gmail.com` - Muenchen - Fahrrad, U-Bahn und Mehrweg-Routine
 - **Moritz Kaltenstadler** - `moritz.kaltenstadler@gmail.com` - Freising - Regionalzug, Fahrrad und gelegentliche Autofahrten
-- **Jana Ammann** - `jana.ammann@test.de` - Muenchen - geboren am 17.08.1998, daraus aktuell Alter `27`
-- **Lisa Ammann** - `lisa.ammann@test.de` - Muenchen - geboren am 18.08.2000, daraus aktuell Alter `25`
+- **Jana Ammann** - `jana.ammann@web.de` - Muenchen - geboren am 17.08.1998, daraus aktuell Alter `27`
+- **Lisa Ammann** - `lisa-ammann@web.de` - Muenchen - geboren am 18.08.2000, daraus aktuell Alter `25`
 
 ## Was der Seed macht
 

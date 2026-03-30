@@ -149,19 +149,6 @@ async function removeUserActivityEntries(ctx, userId) {
   return entries.length;
 }
 
-async function removeUserSurveyResponses(ctx, userId) {
-  const responses = await ctx.db
-    .query("surveyResponses")
-    .withIndex("by_user", (q) => q.eq("userId", userId))
-    .collect();
-
-  for (const response of responses) {
-    await ctx.db.delete(response._id);
-  }
-
-  return responses.length;
-}
-
 async function saveMainAppState(ctx, state, timestamp) {
   const existingAppState = await ctx.db
     .query("appStates")
@@ -345,7 +332,7 @@ const profiles = [
     ],
   },
   {
-    email: "jana.ammann@test.de",
+    email: "jana.ammann@web.de",
     name: "Jana Ammann",
     city: "München",
     age: calculateAge("1998-08-17", Date.now()),
@@ -385,7 +372,7 @@ const profiles = [
     ],
   },
   {
-    email: "lisa.ammann@test.de",
+    email: "lisa-ammann@web.de",
     name: "Lisa Ammann",
     city: "München",
     age: calculateAge("2000-08-18", Date.now()),
@@ -509,7 +496,6 @@ export const seedData = mutation({
     const catalogIds = new Map();
     const appStateAccounts = [];
     let activitiesCreated = 0;
-    let surveyResponsesCreated = 0;
 
     for (const { userId, profile } of targetUsers) {
       const schedule = buildTwoWeekSchedule(profile, startTimestamp);
@@ -555,35 +541,21 @@ export const seedData = mutation({
         activities: normalizedActivities,
       });
 
-      await removeUserSurveyResponses(ctx, userId);
-      const surveyProfile = {
-        overallRating: profile.survey?.overallRating ?? 4,
-        usabilityRating: profile.survey?.usabilityRating ?? 4,
-        designRating: profile.survey?.designRating ?? 4,
-        recommendationRating: profile.survey?.recommendationRating ?? 4,
-        comment: profile.survey?.comment || `${profile.name} hat die Website insgesamt positiv bewertet.`,
-        createdAt: startTimestamp + 12 * DAY_MS + 19 * 60 * 60 * 1000,
-      };
-      await ctx.db.insert("surveyResponses", {
-        userId,
-        ...surveyProfile,
-      });
-      surveyResponsesCreated += 1;
     }
 
     const accountByEmail = new Map(appStateAccounts.map((account) => [account.email, account]));
     const oneDay = startTimestamp + DAY_MS;
     const chatMessages = [
-      authoredEntry(accountByEmail, "jana.ammann@test.de", "Jana Ammann", "Ich finde es hilfreich, dass man die Wege wirklich nachhalten kann. In München sieht man sofort, wie oft Fahrrad und Tram den Alltag tragen.", toIso(oneDay + 8 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "jana.ammann@web.de", "Jana Ammann", "Ich finde es hilfreich, dass man die Wege wirklich nachhalten kann. In München sieht man sofort, wie oft Fahrrad und Tram den Alltag tragen.", toIso(oneDay + 8 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "ammann-jens@web.de", "Jens Ammann", "Bei mir auf dem Land geht ohne Auto nicht alles, aber ich kombiniere jetzt mehr Erledigungen und bilde öfter Fahrgemeinschaften. Das macht in den Punkten auch Sinn.", toIso(oneDay + 9 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "elijah.stauss@gmail.com", "Elijah Stauss", "Der Vergleich Stadt zu Umland ist spannend. Bei mir sind OePNV und Fahrrad fast immer die besten Optionen.", toIso(oneDay + 11 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "moritz.kaltenstadler@gmail.com", "Moritz Kaltenstadler", "Ich mag, dass auch kleine Dinge wie Mehrwegflasche oder Eco-Waesche zaehlen. Das fuehlt sich realistischer an als nur grosse Aktionen.", toIso(oneDay + 13 * 60 * 60 * 1000)),
-      authoredEntry(accountByEmail, "lisa.ammann@test.de", "Lisa Ammann", "Die Wochenansicht motiviert mich gerade voll. Vor allem wenn man sieht, dass viele kleine nachhaltige Entscheidungen zusammenkommen.", toIso(oneDay + 16 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "lisa-ammann@web.de", "Lisa Ammann", "Die Wochenansicht motiviert mich gerade voll. Vor allem wenn man sieht, dass viele kleine nachhaltige Entscheidungen zusammenkommen.", toIso(oneDay + 16 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "ammann.jan@web.de", "Jan Ammann", "Ich wuerde fuer Pendler noch kombinierte Wege staerker hervorheben. Gerade Bahn plus Fahrrad passt fuer Dachau ziemlich gut.", toIso(oneDay + 18 * 60 * 60 * 1000)),
-      authoredEntry(accountByEmail, "jana.ammann@test.de", "Jana Ammann", "Wochenmarkt und Meal-Prep sind bei mir inzwischen fester Teil der Routine. Das sieht man in der Verlaufskurve ganz gut.", toIso(oneDay + 2 * DAY_MS + 10 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "jana.ammann@web.de", "Jana Ammann", "Wochenmarkt und Meal-Prep sind bei mir inzwischen fester Teil der Routine. Das sieht man in der Verlaufskurve ganz gut.", toIso(oneDay + 2 * DAY_MS + 10 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "ammann-jens@web.de", "Jens Ammann", "Homeoffice an einzelnen Tagen hilft bei mir enorm. Dann faellt der lange Pendelweg komplett weg.", toIso(oneDay + 3 * DAY_MS + 8 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "elijah.stauss@gmail.com", "Elijah Stauss", "Vielleicht koennte man noch anzeigen, welche Kategorie in den letzten 7 Tagen am staerksten war.", toIso(oneDay + 4 * DAY_MS + 12 * 60 * 60 * 1000)),
-      authoredEntry(accountByEmail, "lisa.ammann@test.de", "Lisa Ammann", "Ich finde gut, dass nicht jede nachhaltige Aktivitaet gleich viele Punkte hat. Das wirkt nachvollziehbar.", toIso(oneDay + 5 * DAY_MS + 17 * 60 * 60 * 1000)),
+      authoredEntry(accountByEmail, "lisa-ammann@web.de", "Lisa Ammann", "Ich finde gut, dass nicht jede nachhaltige Aktivitaet gleich viele Punkte hat. Das wirkt nachvollziehbar.", toIso(oneDay + 5 * DAY_MS + 17 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "moritz.kaltenstadler@gmail.com", "Moritz Kaltenstadler", "Freising ist so ein Mittelding: mal Zug, mal Fahrrad, manchmal doch Auto. Genau deshalb taugt die App gut als Vergleichsbasis.", toIso(oneDay + 7 * DAY_MS + 9 * 60 * 60 * 1000)),
       authoredEntry(accountByEmail, "ammann.jan@web.de", "Jan Ammann", "Die Exportfunktion koennte fuer die Auswertung richtig praktisch sein. Vor allem wenn man die 14 Tage sauber vergleichen will.", toIso(oneDay + 8 * DAY_MS + 18 * 60 * 60 * 1000)),
     ]
@@ -603,11 +575,11 @@ export const seedData = mutation({
         createdByName: "Jan Ammann",
         createdAt: toIso(oneDay + 6 * DAY_MS + 15 * 60 * 60 * 1000),
       },
-      accountByEmail.get("jana.ammann@test.de") && {
+      accountByEmail.get("jana.ammann@web.de") && {
         category: "nutrition",
         title: "Wochenmenue geplant statt spontane Bestellung",
         proposedPoints: 2,
-        createdBy: accountByEmail.get("jana.ammann@test.de").id,
+        createdBy: accountByEmail.get("jana.ammann@web.de").id,
         createdByName: "Jana Ammann",
         createdAt: toIso(oneDay + 7 * DAY_MS + 14 * 60 * 60 * 1000),
       },
@@ -619,11 +591,11 @@ export const seedData = mutation({
         createdByName: "Moritz Kaltenstadler",
         createdAt: toIso(oneDay + 9 * DAY_MS + 10 * 60 * 60 * 1000),
       },
-      accountByEmail.get("lisa.ammann@test.de") && {
+      accountByEmail.get("lisa-ammann@web.de") && {
         category: "individual",
         title: "Leitungswasser unterwegs nachgefuellt",
         proposedPoints: 1,
-        createdBy: accountByEmail.get("lisa.ammann@test.de").id,
+        createdBy: accountByEmail.get("lisa-ammann@web.de").id,
         createdByName: "Lisa Ammann",
         createdAt: toIso(oneDay + 10 * DAY_MS + 11 * 60 * 60 * 1000),
       },
@@ -680,7 +652,6 @@ export const seedData = mutation({
       chatMessagesCreated: chatMessages.length,
       activityRequestsCreated: activityRequests.length,
       approvedActivitiesCreated: approvedActivities.length,
-      surveyResponsesCreated,
       seededUsers: profiles.map((profile) => ({
         name: profile.name,
         email: profile.email,
@@ -700,8 +671,6 @@ export const cleanupProtectedProfiles = mutation({
     const removedUsers = [];
     const deletedUserIds = new Set();
     let deletedEntries = 0;
-    let deletedSurveyResponses = 0;
-
     for (const email of protectedEmails) {
       const user = await ctx.db
         .query("users")
@@ -713,7 +682,6 @@ export const cleanupProtectedProfiles = mutation({
       }
 
       deletedEntries += await removeUserActivityEntries(ctx, user._id);
-      deletedSurveyResponses += await removeUserSurveyResponses(ctx, user._id);
       await ctx.db.delete(user._id);
       deletedUserIds.add(String(user._id));
       removedUsers.push({
@@ -753,7 +721,6 @@ export const cleanupProtectedProfiles = mutation({
       ok: true,
       removedUsers,
       deletedEntries,
-      deletedSurveyResponses,
     };
   },
 });
