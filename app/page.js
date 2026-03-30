@@ -240,16 +240,9 @@ const COPY = {
       eyebrow: "Bewertung",
       title: "Website bewerten",
       text:
-        "Hier seht ihr hinterlegte Umfrageantworten aus Convex und könnt zusätzlich die Microsoft-Forms-Umfrage öffnen.",
-      button: "Microsoft Forms öffnen",
+        "Hier können Nutzer direkt an eurer Microsoft-Forms-Umfrage teilnehmen und die Web-App bewerten.",
+      button: "Umfrage öffnen",
       linkLabel: "Microsoft Forms",
-      storedTitle: "Gespeicherte Antworten",
-      storedEmpty: "Noch keine Umfrageantworten in Convex gespeichert.",
-      responses: "Antworten",
-      average: "Durchschnitt",
-      recommendation: "Weiterempfehlung",
-      usability: "Bedienung",
-      design: "Design",
     },
     imprint: {
       label: "Impressum",
@@ -525,16 +518,9 @@ const COPY = {
       eyebrow: "Rating",
       title: "Rate the Website",
       text:
-        "Users can view stored survey responses from Convex here and additionally open the Microsoft Forms survey.",
-      button: "Open Microsoft Forms",
+        "Users can open your Microsoft Forms survey here directly and rate the web app.",
+      button: "Open Survey",
       linkLabel: "Microsoft Forms",
-      storedTitle: "Stored Responses",
-      storedEmpty: "No survey responses stored in Convex yet.",
-      responses: "Responses",
-      average: "Average",
-      recommendation: "Recommendation",
-      usability: "Usability",
-      design: "Design",
     },
     imprint: {
       label: "Legal Notice",
@@ -759,7 +745,6 @@ export default function Page() {
     api.activityTracking.getAllEntries,
     canAdminExport ? {} : "skip",
   );
-  const surveyResponses = useQuery(api.surveys.list, {});
   const copy = COPY[language];
   const selectedExportRangeLabel = getExportRangeLabel(exportRangePreset, copy);
   const filteredUserExportEntries = filterEntriesForExport(convexActivityEntries, {
@@ -1979,7 +1964,7 @@ export default function Page() {
           />
         )}
 
-        {view === "survey" && <SurveyPanel copy={copy} responses={surveyResponses} language={language} />}
+        {view === "survey" && <SurveyPanel copy={copy} />}
       </main>
       <ImprintFooter copy={copy} />
     </div>
@@ -3148,20 +3133,12 @@ function FeedbackPanel({
   );
 }
 
-function SurveyPanel({ copy, responses, language }) {
+function SurveyPanel({ copy }) {
   function openSurvey() {
     if (typeof window !== "undefined") {
       window.open(SURVEY_URL, "_blank", "noopener,noreferrer");
     }
   }
-
-  const items = Array.isArray(responses) ? responses : [];
-  const averageOverall = items.length
-    ? (items.reduce((sum, item) => sum + (Number(item.overallRating) || 0), 0) / items.length).toFixed(1)
-    : null;
-  const averageRecommendation = items.length
-    ? (items.reduce((sum, item) => sum + (Number(item.recommendationRating) || 0), 0) / items.length).toFixed(1)
-    : null;
 
   return (
     <section className="panel settings-panel">
@@ -3178,51 +3155,6 @@ function SurveyPanel({ copy, responses, language }) {
         <button type="button" className="primary-button small-button" onClick={openSurvey}>
           {copy.survey.button}
         </button>
-
-        <div className="stats-grid" style={{ marginTop: "1rem" }}>
-          <article className="metric-card">
-            <p className="metric-label">{copy.survey.responses}</p>
-            <p className="metric-value">{items.length}</p>
-          </article>
-          <article className="metric-card">
-            <p className="metric-label">{copy.survey.average}</p>
-            <p className="metric-value">{averageOverall ?? "-"}</p>
-          </article>
-          <article className="metric-card">
-            <p className="metric-label">{copy.survey.recommendation}</p>
-            <p className="metric-value">{averageRecommendation ?? "-"}</p>
-          </article>
-        </div>
-
-        <div style={{ marginTop: "1rem" }}>
-          <h3>{copy.survey.storedTitle}</h3>
-          {items.length ? (
-            <div className="proposal-list">
-              {items.map((item) => (
-                <article key={item._id} className="proposal-card">
-                  <div className="proposal-head">
-                    <div>
-                      <h4>{item.userName}</h4>
-                      <p>{formatDate(item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString(), language)}</p>
-                    </div>
-                    <div className="proposal-score">
-                      <span>{copy.survey.average}</span>
-                      <strong>{item.overallRating}/5</strong>
-                    </div>
-                  </div>
-                  <div className="proposal-meta">
-                    <span>{copy.survey.usability}: {item.usabilityRating}/5</span>
-                    <span>{copy.survey.design}: {item.designRating}/5</span>
-                    <span>{copy.survey.recommendation}: {item.recommendationRating}/5</span>
-                  </div>
-                  <p>{item.comment}</p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="chat-note">{copy.survey.storedEmpty}</p>
-          )}
-        </div>
       </div>
     </section>
   );
@@ -3533,8 +3465,8 @@ function normalizeChatMessage(message) {
   return {
     id: message.id || crypto.randomUUID(),
     accountId: message.accountId || "system",
-    author: message.author || "System",
-    message: message.message || "",
+    author: restoreGermanUmlauts(message.author || "System"),
+    message: restoreGermanUmlauts(message.message || ""),
     createdAt: message.createdAt || new Date().toISOString(),
   };
 }
