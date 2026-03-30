@@ -9,6 +9,7 @@ export default defineSchema({
     age: v.string(),
     password: v.string(),
     createdAt: v.number(),
+    surveySurveyCompleted: v.optional(v.boolean()),
   }).index("by_email", ["email"]),
 
   appStates: defineTable({

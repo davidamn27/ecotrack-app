@@ -10,6 +10,7 @@
 
 import type * as activityTracking from "../activityTracking.js";
 import type * as appState from "../appState.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   activityTracking: typeof activityTracking;
   appState: typeof appState;
+  seed: typeof seed;
   users: typeof users;
 }>;
 
