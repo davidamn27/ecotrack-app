@@ -23,7 +23,8 @@ Der Seed arbeitet mit allen explizit genannten Personen. In der Anforderung steh
 6. Der Community-Chat wird mit realistisch wirkenden Nachrichten vorbefuellt.
 7. Es werden offene Anfragen fuer neue Aktivitaeten angelegt.
 8. Einige bereits freigegebene Custom-Aktivitaeten werden mit gespeichert.
-9. Zusaetzlich wird der Activity-Katalog fuer die verwendeten Aktivitaeten mit gepflegt.
+9. Fuer die angelegten Referenznutzer werden sichtbare Umfrageantworten in Convex gespeichert.
+10. Zusaetzlich wird der Activity-Katalog fuer die verwendeten Aktivitaeten mit gepflegt.
 
 ## Bestehende Profildaten
 

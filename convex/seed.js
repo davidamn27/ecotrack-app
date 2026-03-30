@@ -122,6 +122,53 @@ function createId(prefix, index) {
   return `${prefix}-${String(index).padStart(2, "0")}`;
 }
 
+async function removeUserActivityEntries(ctx, userId) {
+  const entries = await ctx.db
+    .query("activityEntries")
+    .withIndex("by_user_created", (q) => q.eq("userId", userId))
+    .collect();
+
+  for (const entry of entries) {
+    await ctx.db.delete(entry._id);
+  }
+
+  return entries.length;
+}
+
+async function removeUserSurveyResponses(ctx, userId) {
+  const responses = await ctx.db
+    .query("surveyResponses")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+
+  for (const response of responses) {
+    await ctx.db.delete(response._id);
+  }
+
+  return responses.length;
+}
+
+async function saveMainAppState(ctx, state, timestamp) {
+  const existingAppState = await ctx.db
+    .query("appStates")
+    .withIndex("by_name", (q) => q.eq("name", "main"))
+    .unique();
+
+  if (existingAppState) {
+    await ctx.db.patch(existingAppState._id, {
+      state,
+      updatedAt: timestamp,
+    });
+    return;
+  }
+
+  await ctx.db.insert("appStates", {
+    name: "main",
+    state,
+    updatedAt: timestamp,
+  });
+}
+
 const profiles = [
   {
     email: "ammann-jens@web.de",
@@ -448,6 +495,7 @@ export const seedData = mutation({
     const catalogIds = new Map();
     const appStateAccounts = [];
     let activitiesCreated = 0;
+    let surveyResponsesCreated = 0;
 
     for (const { userId, profile } of targetUsers) {
       const schedule = buildTwoWeekSchedule(profile, startTimestamp);
@@ -492,6 +540,21 @@ export const seedData = mutation({
         createdAt: toIso(now),
         activities: normalizedActivities,
       });
+
+      await removeUserSurveyResponses(ctx, userId);
+      const surveyProfile = {
+        overallRating: profile.survey?.overallRating ?? 4,
+        usabilityRating: profile.survey?.usabilityRating ?? 4,
+        designRating: profile.survey?.designRating ?? 4,
+        recommendationRating: profile.survey?.recommendationRating ?? 4,
+        comment: profile.survey?.comment || `${profile.name} hat die Website insgesamt positiv bewertet.`,
+        createdAt: startTimestamp + 12 * DAY_MS + 19 * 60 * 60 * 1000,
+      };
+      await ctx.db.insert("surveyResponses", {
+        userId,
+        ...surveyProfile,
+      });
+      surveyResponsesCreated += 1;
     }
 
     const accountByEmail = new Map(appStateAccounts.map((account) => [account.email, account]));
@@ -640,11 +703,6 @@ export const seedData = mutation({
       },
     ];
 
-    const existingAppState = await ctx.db
-      .query("appStates")
-      .withIndex("by_name", (q) => q.eq("name", "main"))
-      .unique();
-
     const seededState = {
       accounts: appStateAccounts,
       activeAccountId: null,
@@ -653,19 +711,7 @@ export const seedData = mutation({
       activityRequests,
       approvedActivities,
     };
-
-    if (existingAppState) {
-      await ctx.db.patch(existingAppState._id, {
-        state: seededState,
-        updatedAt: now,
-      });
-    } else {
-      await ctx.db.insert("appStates", {
-        name: "main",
-        state: seededState,
-        updatedAt: now,
-      });
-    }
+    await saveMainAppState(ctx, seededState, now);
 
     return {
       ok: true,
@@ -678,6 +724,7 @@ export const seedData = mutation({
       chatMessagesCreated: chatMessages.length,
       activityRequestsCreated: activityRequests.length,
       approvedActivitiesCreated: approvedActivities.length,
+      surveyResponsesCreated,
       seededUsers: profiles.map((profile) => ({
         name: profile.name,
         email: profile.email,
@@ -686,6 +733,71 @@ export const seedData = mutation({
         mobilityContext: profile.mobilityContext,
       })),
       message: "Referenznutzer mit plausiblen 14 Tagen Aktivität erfolgreich angelegt",
+    };
+  },
+});
+
+export const cleanupProtectedProfiles = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const protectedEmails = [...LOCK_EXISTING_PROFILE_EMAILS];
+    const removedUsers = [];
+    const deletedUserIds = new Set();
+    let deletedEntries = 0;
+    let deletedSurveyResponses = 0;
+
+    for (const email of protectedEmails) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .unique();
+
+      if (!user) {
+        continue;
+      }
+
+      deletedEntries += await removeUserActivityEntries(ctx, user._id);
+      deletedSurveyResponses += await removeUserSurveyResponses(ctx, user._id);
+      await ctx.db.delete(user._id);
+      deletedUserIds.add(String(user._id));
+      removedUsers.push({
+        email: user.email,
+        name: user.name,
+      });
+    }
+
+    const existingAppState = await ctx.db
+      .query("appStates")
+      .withIndex("by_name", (q) => q.eq("name", "main"))
+      .unique();
+
+    if (existingAppState) {
+      const state = existingAppState.state || {};
+      const cleanedState = {
+        ...state,
+        activeAccountId: deletedUserIds.has(String(state.activeAccountId)) ? null : state.activeAccountId || null,
+        accounts: Array.isArray(state.accounts)
+          ? state.accounts.filter((account) => !deletedUserIds.has(String(account.id)))
+          : [],
+        chatMessages: Array.isArray(state.chatMessages)
+          ? state.chatMessages.filter((entry) => !deletedUserIds.has(String(entry.accountId)))
+          : [],
+        customProposals: Array.isArray(state.customProposals)
+          ? state.customProposals.filter((proposal) => !deletedUserIds.has(String(proposal.createdBy)))
+          : [],
+        activityRequests: Array.isArray(state.activityRequests)
+          ? state.activityRequests.filter((request) => !deletedUserIds.has(String(request.createdBy)))
+          : [],
+        approvedActivities: Array.isArray(state.approvedActivities) ? state.approvedActivities : [],
+      };
+      await saveMainAppState(ctx, cleanedState, Date.now());
+    }
+
+    return {
+      ok: true,
+      removedUsers,
+      deletedEntries,
+      deletedSurveyResponses,
     };
   },
 });

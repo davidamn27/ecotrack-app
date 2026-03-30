@@ -44,4 +44,14 @@ export default defineSchema({
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_date", ["dateKey"])
     .index("by_category_date", ["category", "dateKey"]),
+
+  surveyResponses: defineTable({
+    userId: v.id("users"),
+    overallRating: v.number(),
+    usabilityRating: v.number(),
+    designRating: v.number(),
+    recommendationRating: v.number(),
+    comment: v.string(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
 });
