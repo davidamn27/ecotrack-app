@@ -9,6 +9,10 @@ const LOCK_EXISTING_PROFILE_EMAILS = new Set([
   "moritz.kaltenstadler@gmail.com",
 ]);
 
+function passwordForProfile(profile) {
+  return profile.password || TEST_PASSWORD;
+}
+
 function calculateAge(birthDate, nowTimestamp) {
   const now = new Date(nowTimestamp);
   const birth = new Date(birthDate);
@@ -336,6 +340,7 @@ const profiles = [
     name: "Jana Ammann",
     city: "München",
     age: calculateAge("1998-08-17", Date.now()),
+    password: "JanaAmmann98!",
     mobilityContext: "Münchner Alltagsroutine mit Rad, Tram und konsequent nachhaltigem Konsum",
     weekdayMorning: [
       [activity("mobility", "Mit dem Fahrrad zur Arbeit", 2, "Fährt morgens mit dem Rad durch München", 8, 10)],
@@ -376,6 +381,7 @@ const profiles = [
     name: "Lisa Ammann",
     city: "München",
     age: calculateAge("2000-08-18", Date.now()),
+    password: "LisaAmmann00!",
     mobilityContext: "urbaner Alltag mit viel ÖPNV, zu Fuß und konsequenter Mehrweg-Nutzung",
     weekdayMorning: [
       [activity("mobility", "Öffentliche Verkehrsmittel genutzt", 3, "Fährt täglich mit U-Bahn und Bus", 8, 15)],
@@ -444,7 +450,7 @@ export const seedData = mutation({
               email: profile.email,
               city: profile.city,
               age: profile.age,
-              password: TEST_PASSWORD,
+              password: passwordForProfile(profile),
               surveySurveyCompleted: true,
             });
         userId = existing._id;
@@ -461,7 +467,7 @@ export const seedData = mutation({
           email: profile.email,
           city: profile.city,
           age: profile.age,
-          password: TEST_PASSWORD,
+          password: passwordForProfile(profile),
           surveySurveyCompleted: true,
           createdAt: now,
         });
@@ -536,7 +542,7 @@ export const seedData = mutation({
         email: profile.email,
         city: profile.city,
         age: profile.age,
-        password: TEST_PASSWORD,
+        password: passwordForProfile(profile),
         createdAt: toIso(now),
         activities: normalizedActivities,
       });
@@ -648,6 +654,12 @@ export const seedData = mutation({
       deletedEntries,
       activitiesCreated,
       defaultPassword: TEST_PASSWORD,
+      seededPasswords: profiles
+        .filter((profile) => !LOCK_EXISTING_PROFILE_EMAILS.has(profile.email))
+        .map((profile) => ({
+          email: profile.email,
+          password: passwordForProfile(profile),
+        })),
       skippedExistingProfiles,
       chatMessagesCreated: chatMessages.length,
       activityRequestsCreated: activityRequests.length,

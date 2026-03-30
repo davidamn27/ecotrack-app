@@ -50,11 +50,14 @@ Die Historie ist absichtlich nicht zufaellig, sondern personenspezifisch:
 - Die Chat-Nachrichten greifen genau diese Unterschiede auf, damit die Community-Ansicht nicht leer wirkt.
 - Die Aktivitaetsanfragen passen zum Projektkontext und fuehlen sich wie echte Vorschlaege der Testnutzer an.
 
-## Standard-Passwort
+## Passwoerter
 
-Alle 6 Referenznutzer werden auf dieses Passwort gesetzt:
+Die bestehenden realen Nutzer behalten ihre gesetzten Passwoerter.
 
-`test123`
+Die Seed-Accounts fuer die Demo sind:
+
+- `jana.ammann@web.de` -> `JanaAmmann98!`
+- `lisa-ammann@web.de` -> `LisaAmmann00!`
 
 ## Seed ausfuehren
 
