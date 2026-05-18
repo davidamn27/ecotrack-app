@@ -8,7 +8,7 @@ const STORAGE_KEY = "ecoboard-data-v7";
 const LANGUAGE_KEY = "ecoboard-language-v1";
 const SESSION_ACCOUNT_KEY = "ecoboard-session-account-v1";
 const SESSION_VIEW_KEY = "ecoboard-session-view-v1";
-const SURVEY_URL = "https://forms.cloud.microsoft/r/rn9GGZV6Na";
+const DEFAULT_SURVEY_URL = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__ok4QgNUNlVGUURCNUVUS0g0WTMyU05DSEowOEtUOS4u";
 const LEGACY_STORAGE_KEYS = [];
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const IS_DEV_BUILD = process.env.NODE_ENV !== "production";
@@ -726,6 +726,7 @@ export default function Page() {
   const [exportDateFrom, setExportDateFrom] = useState("");
   const [exportDateTo, setExportDateTo] = useState("");
   const remoteAppState = useQuery(api.appState.get, { name: "main" });
+  const remoteSurveyConfig = useQuery(api.appState.get, { name: "surveyConfig" });
   const saveRemoteAppState = useMutation(api.appState.save);
   const registerUser = useMutation(api.users.register);
   const loginUser = useMutation(api.users.login);
@@ -734,18 +735,21 @@ export default function Page() {
   const deleteUser = useMutation(api.users.deleteUser);
   const upsertActivityCatalog = useMutation(api.activityTracking.upsertCatalog);
   const addActivityEntries = useMutation(api.activityTracking.addEntries);
-  const activeAccount = getActiveAccount(appState);
+  const storedActiveAccount = getActiveAccount(appState);
   const convexActivityEntries = useQuery(
     api.activityTracking.getUserEntries,
-    activeAccount?.backendUserId ? { userId: activeAccount.backendUserId } : "skip",
+    storedActiveAccount?.backendUserId ? { userId: storedActiveAccount.backendUserId } : "skip",
   );
   const canAdminExport = observerMode;
-  const convexUsers = useQuery(api.users.list, canAdminExport ? {} : "skip");
-  const convexAllActivityEntries = useQuery(
-    api.activityTracking.getAllEntries,
-    canAdminExport ? {} : "skip",
-  );
+  const convexUsers = useQuery(api.users.list, {});
+  const convexAllActivityEntries = useQuery(api.activityTracking.getAllEntries, {});
   const copy = COPY[language];
+  const displayAccounts = mergeConvexDataIntoAccounts(appState.accounts, convexUsers, convexAllActivityEntries);
+  const displayAppState = {
+    ...appState,
+    accounts: displayAccounts,
+  };
+  const activeAccount = getActiveAccount(displayAppState);
   const selectedExportRangeLabel = getExportRangeLabel(exportRangePreset, copy);
   const filteredUserExportEntries = filterEntriesForExport(convexActivityEntries, {
     preset: exportRangePreset,
@@ -757,6 +761,7 @@ export default function Page() {
     from: exportDateFrom,
     to: exportDateTo,
   });
+  const surveyUrl = getSurveyUrl(remoteSurveyConfig);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -859,7 +864,7 @@ export default function Page() {
   }, [appState.activeAccountId, hasHydratedState, view]);
 
   const sessionAccount = activeAccount || (observerMode ? createObserverAccount(copy) : null);
-  const leaderboard = getLeaderboardData(appState.accounts);
+  const leaderboard = getLeaderboardData(displayAccounts);
   const activeStats = sessionAccount ? getAccountStats(sessionAccount, language) : createEmptyStats(language);
   const activeRank = activeAccount
     ? leaderboard.find((item) => item.account.id === activeAccount.id)?.rank || "-"
@@ -1890,7 +1895,7 @@ export default function Page() {
             activityRequests={activityRequests}
             handleReviewActivityRequest={handleReviewActivityRequest}
             rank={activeRank}
-            communityCount={appState.accounts.length}
+            communityCount={displayAccounts.length}
             status={status}
             canAdminExport={canAdminExport}
             isExportingAllExcel={isExportingAllExcel}
@@ -1964,7 +1969,7 @@ export default function Page() {
           />
         )}
 
-        {view === "survey" && <SurveyPanel copy={copy} />}
+        {view === "survey" && <SurveyPanel copy={copy} surveyUrl={surveyUrl} />}
       </main>
       <ImprintFooter copy={copy} />
     </div>
@@ -3133,10 +3138,10 @@ function FeedbackPanel({
   );
 }
 
-function SurveyPanel({ copy }) {
+function SurveyPanel({ copy, surveyUrl }) {
   function openSurvey() {
     if (typeof window !== "undefined") {
-      window.open(SURVEY_URL, "_blank", "noopener,noreferrer");
+      window.open(surveyUrl, "_blank", "noopener,noreferrer");
     }
   }
 
@@ -3151,7 +3156,7 @@ function SurveyPanel({ copy }) {
 
       <div className="custom-card feedback-card survey-card">
         <p className="chat-note">{copy.survey.text}</p>
-        <p className="survey-link">{copy.survey.linkLabel}: {SURVEY_URL}</p>
+        <p className="survey-link">{copy.survey.linkLabel}: {surveyUrl}</p>
         <button type="button" className="primary-button small-button" onClick={openSurvey}>
           {copy.survey.button}
         </button>
@@ -3450,6 +3455,78 @@ function mapUserToAccount(user) {
   };
 }
 
+function mergeConvexDataIntoAccounts(accounts, users, entries) {
+  const accountMap = new Map((accounts || []).map((account) => [String(account.id), account]));
+
+  if (Array.isArray(users)) {
+    for (const user of users) {
+      if (!user?._id) {
+        continue;
+      }
+
+      const mapped = mapUserToAccount(user);
+      const existing = accountMap.get(String(mapped.id));
+      accountMap.set(String(mapped.id), existing ? { ...mapped, ...existing } : mapped);
+    }
+  }
+
+  if (!Array.isArray(entries)) {
+    return [...accountMap.values()];
+  }
+
+  const entriesByUser = new Map();
+  for (const entry of entries) {
+    if (!entry?.userId) {
+      continue;
+    }
+
+    const key = String(entry.userId);
+    const current = entriesByUser.get(key) || [];
+    current.push(mapActivityEntryToActivity(entry));
+    entriesByUser.set(key, current);
+  }
+
+  return [...accountMap.values()].map((account) => {
+    const convexActivities = entriesByUser.get(String(account.backendUserId || account.id));
+    if (!convexActivities) {
+      return account;
+    }
+
+    return {
+      ...account,
+      activities: mergeActivities(account.activities, convexActivities),
+    };
+  });
+}
+
+function mapActivityEntryToActivity(entry) {
+  const createdAt =
+    typeof entry.createdAt === "number"
+      ? new Date(entry.createdAt).toISOString()
+      : entry.createdAt || new Date().toISOString();
+
+  return normalizeActivity({
+    id: entry._id || `${entry.userId}-${entry.dateKey}-${entry.title}`,
+    category: entry.category,
+    title: entry.title,
+    points: entry.points,
+    note: entry.note,
+    createdAt,
+  });
+}
+
+function mergeActivities(localActivities = [], convexActivities = []) {
+  const byId = new Map();
+  for (const activity of [...convexActivities, ...localActivities]) {
+    const normalized = normalizeActivity(activity);
+    byId.set(String(normalized.id), normalized);
+  }
+
+  return [...byId.values()].sort((left, right) => {
+    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+  });
+}
+
 function normalizeActivity(activity) {
   return {
     id: activity.id || crypto.randomUUID(),
@@ -3581,6 +3658,13 @@ function createObserverAccount(copy) {
     createdAt: new Date().toISOString(),
     activities: [],
   };
+}
+
+function getSurveyUrl(remoteSurveyConfig) {
+  const configuredUrl = remoteSurveyConfig?.state?.url;
+  return typeof configuredUrl === "string" && configuredUrl.trim()
+    ? configuredUrl.trim()
+    : DEFAULT_SURVEY_URL;
 }
 
 function getLeaderboardData(accounts) {
